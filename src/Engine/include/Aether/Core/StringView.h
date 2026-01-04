@@ -11,8 +11,8 @@
 namespace Aether::Core {
     class AETHER_API StringView {
     public:
-        constexpr StringView();
-        constexpr StringView(const char* d, uint32_t n);
+        StringView();
+        StringView(const char* d, uint32_t n);
 
         static StringView FromCString(const char* cstr);
 

@@ -11,8 +11,9 @@
 #include <Aether/Core/Hash.h>
 #include <Aether/Core/Assert.h>
 #include <Aether/Core/StringView.h>
-#include <Aether/Core/Memory/NameAllocator.h>
 #include <Aether/Core/Memory/LinearAllocator.h>
+
+#include "Memory/NameAllocator.h"
 
 namespace Aether::Core {
     class Name::Impl {

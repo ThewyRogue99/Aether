@@ -8,10 +8,6 @@ target_link_libraries(AetherEditor PRIVATE
     Aether::Engine
 )
 
-target_include_directories(AetherEngine PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
 add_library(Aether::Editor ALIAS AetherEditor)
 
 add_executable(AetherEditorApp src/main.cpp)

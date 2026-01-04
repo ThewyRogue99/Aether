@@ -7,8 +7,8 @@
 #include <Aether/Core/Assert.h>
 
 namespace Aether::Core {
-    constexpr StringView::StringView() = default;
-    constexpr StringView::StringView(const char* d, uint32_t n) : data(d), size(n) { }
+    StringView::StringView() = default;
+    StringView::StringView(const char* d, uint32_t n) : data(d), size(n) { }
 
     StringView StringView::FromCString(const char* cstr) {
         if (!cstr) return {};
