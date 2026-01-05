@@ -15,8 +15,8 @@ namespace Aether::Core {
         String();
         String(const String& other);
         String(String&& other) noexcept;
+        String(const char* cstr, BasicAllocator* alloc = nullptr);
         explicit String(StringView sv, BasicAllocator* alloc = nullptr);
-        explicit String(const char* cstr, BasicAllocator* alloc = nullptr);
 
         ~String();
 

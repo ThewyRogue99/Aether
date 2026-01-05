@@ -12,7 +12,7 @@ namespace Aether::Platform {
         unsigned int Width;
         unsigned int Height;
 
-        explicit WindowProps(
+        WindowProps(
             const char* Title = "Aether",
             const unsigned int Width = 1280,
             const unsigned int Height = 720
@@ -36,6 +36,6 @@ namespace Aether::Platform {
 
         [[nodiscard]] virtual void* GetNativeWindow() const = 0;
 
-        static std::shared_ptr<Window> Create(const WindowProps& props = WindowProps());
+        static std::unique_ptr<Window> Create(const WindowProps& props = WindowProps());
     };
 }

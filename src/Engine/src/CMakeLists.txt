@@ -17,10 +17,12 @@ target_include_directories(aether_engine PUBLIC
     ${ENGINE_SOURCE_DIR}
 )
 
-target_link_libraries(aether_engine PRIVATE
-    aether_engine_build
-    Aether::Engine::Core
-    Aether::Engine::Platform
+target_link_libraries(aether_engine
+    PRIVATE
+        aether_engine_build
+    PUBLIC
+        Aether::Engine::Core
+        Aether::Engine::Platform
 )
 
 add_library(Aether::Engine ALIAS aether_engine)

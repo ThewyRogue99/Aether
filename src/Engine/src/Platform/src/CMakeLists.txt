@@ -1,6 +1,6 @@
 add_library(aether_engine_platform STATIC Platform.cpp Window.cpp)
 
-target_include_directories(aether_engine_platform PRIVATE ${PLATFORM_INCLUDE_DIR})
+target_include_directories(aether_engine_platform PUBLIC ${PLATFORM_INCLUDE_DIR})
 
 add_subdirectory(glfw)
 

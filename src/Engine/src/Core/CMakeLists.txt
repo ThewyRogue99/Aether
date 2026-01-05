@@ -10,7 +10,10 @@ add_library(aether_engine_core STATIC
 
 target_include_directories(aether_engine_core PRIVATE ${ENGINE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(aether_engine_core PRIVATE aether_engine_build)
+target_link_libraries(aether_engine_core PRIVATE
+    aether_engine_build
+    Aether::Engine::Platform
+)
 
 add_subdirectory(Memory)
 

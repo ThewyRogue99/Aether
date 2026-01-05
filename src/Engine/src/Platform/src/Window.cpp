@@ -9,7 +9,7 @@
 namespace Aether::Platform {
     Window::~Window() = default;
 
-    std::shared_ptr<Window> Window::Create(const WindowProps &props) {
-        return std::make_shared<GLFWWindow>(props);
+    std::unique_ptr<Window> Window::Create(const WindowProps &props) {
+        return std::make_unique<GLFWWindow>(props);
     }
 }
