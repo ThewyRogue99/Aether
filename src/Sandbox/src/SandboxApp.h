@@ -6,8 +6,17 @@
 
 #include <Aether/Core/Application.h>
 
+namespace Aether::Log {
+    class Sink;
+}
+
 class SandboxApp : public Aether::Core::Application {
 public:
     SandboxApp(int argc, char** argv);
     ~SandboxApp() override;
+
+    void OnInit() override;
+
+private:
+    std::unique_ptr<Aether::Log::Sink> m_LogSink;
 };

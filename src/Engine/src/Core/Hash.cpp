@@ -9,8 +9,8 @@
 namespace Aether::Core {
     uint32_t FNV1a32(const StringView& sv) {
         uint32_t h = 2166136261u;
-        for (uint32_t i = 0; i < sv.size; ++i) {
-            h ^= static_cast<uint8_t>(sv.data[i]);
+        for (uint32_t i = 0; i < sv.size(); ++i) {
+            h ^= static_cast<uint8_t>(sv.data()[i]);
             h *= 16777619u;
         }
         return h;

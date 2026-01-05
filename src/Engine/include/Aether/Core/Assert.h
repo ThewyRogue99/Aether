@@ -8,8 +8,14 @@
 
 #include "Core.h"
 
-#if AETHER_DEBUG_BUILD
-    #define AETHER_ASSERT(x) do { if (!(x)) { AETHER_DEBUGBREAK(); assert(x); } } while (0)
+#if AETHER_BUILD_DEBUG
+    #define AETHER_ASSERT(x) \
+    do { \
+        if (!(x)) { \
+            AETHER_DEBUGBREAK(); \
+            std::abort(); \
+        } \
+    } while (0)
 #else
     #define AETHER_ASSERT(x) ((void)0)
 #endif

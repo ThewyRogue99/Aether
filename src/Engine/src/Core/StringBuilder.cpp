@@ -19,9 +19,9 @@ namespace Aether::Core {
     bool StringBuilder::empty() const { return m_size == 0; }
 
     void StringBuilder::append(StringView sv) {
-        if (sv.size == 0) return;
+        if (sv.size() == 0) return;
         m_parts.push_back(sv);
-        m_size += sv.size;
+        m_size += sv.size();
     }
 
     void StringBuilder::append(const char* cstr) {
@@ -53,8 +53,8 @@ namespace Aether::Core {
 
         char* dst = out;
         for (const StringView& sv : m_parts) {
-            std::memcpy(dst, sv.data, sv.size);
-            dst += sv.size;
+            std::memcpy(dst, sv.data(), sv.size());
+            dst += sv.size();
         }
 
         out[m_size] = '\0';

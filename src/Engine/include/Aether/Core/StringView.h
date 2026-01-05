@@ -16,21 +16,25 @@ namespace Aether::Core {
 
         static StringView FromCString(const char* cstr);
 
-        constexpr explicit StringView(std::string_view sv);
+        explicit StringView(std::string_view sv);
 
-        [[nodiscard]] constexpr bool empty() const;
+        [[nodiscard]] bool empty() const;
 
-        [[nodiscard]] constexpr const char* begin() const;
-        [[nodiscard]] constexpr const char* end() const;
+        [[nodiscard]] const char* begin() const;
+        [[nodiscard]] const char* end() const;
 
-        constexpr char operator[](uint32_t i) const;
+        char operator[](uint32_t i) const;
 
         [[nodiscard]] int compare(StringView other) const;
 
         friend bool operator==(StringView a, StringView b);
         friend bool operator!=(StringView a, StringView b);
 
-        const char* data = nullptr;
-        uint32_t size = 0;
+        [[nodiscard]] const char* data() const;
+        [[nodiscard]] uint32_t size() const;
+
+    private:
+        const char* m_Data = nullptr;
+        uint32_t m_Size = 0;
     };
 }

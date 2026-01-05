@@ -11,6 +11,10 @@ uintptr_t alignUp(uintptr_t p, uint32_t a) {
     return (p + a - 1) & ~(static_cast<uintptr_t>(a) - 1);
 }
 
+constexpr bool isPowerOfTwo(uint32_t x) {
+    return x != 0 && (x & (x - 1)) == 0;
+}
+
 namespace Aether::Core {
     LinearAllocator::LinearAllocator(uint32_t blockSize) : m_blockSize(blockSize) {}
 

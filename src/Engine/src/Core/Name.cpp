@@ -38,18 +38,18 @@ namespace Aether::Core {
                 auto& bucket = hashToIds[h];
                 for (uint32_t id : bucket) {
                     const StringView& s = strings[id];
-                    if (s.size == sv.size && std::memcmp(s.data, sv.data, sv.size) == 0) {
+                    if (s.size() == sv.size() && std::memcmp(s.data(), sv.data(), sv.size()) == 0) {
                         return id;
                     }
                 }
 
                 // new string
                 const uint32_t newId = static_cast<uint32_t>(strings.size());
-                char* mem = static_cast<char*>(NameAllocator().allocate(sv.size + 1, alignof(char)));
-                std::memcpy(mem, sv.data, sv.size);
-                mem[sv.size] = '\0';
+                char* mem = static_cast<char*>(NameAllocator().allocate(sv.size() + 1, alignof(char)));
+                std::memcpy(mem, sv.data(), sv.size());
+                mem[sv.size()] = '\0';
 
-                strings.push_back(StringView{ mem, sv.size });
+                strings.push_back(StringView{ mem, sv.size() });
                 bucket.push_back(newId);
                 return newId;
             }
@@ -73,7 +73,7 @@ namespace Aether::Core {
         }
 
         static uint32_t Intern(StringView sv) {
-            if (sv.size == 0) return 0;
+            if (sv.empty()) return 0;
             return NameTable().intern(sv);
         }
 

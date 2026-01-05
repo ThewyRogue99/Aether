@@ -69,24 +69,24 @@ namespace Aether::Core {
 
     void String::assign(StringView sv) {
         clear();
-        reserve(sv.size);
-        if (sv.size) {
-            std::memcpy(m_data, sv.data, sv.size);
-            m_size = sv.size;
+        reserve(sv.size());
+        if (!sv.empty()) {
+            std::memcpy(m_data, sv.data(), sv.size());
+            m_size = sv.size();
             m_data[m_size] = '\0';
         }
     }
 
     void String::append(StringView sv) {
-        if (sv.size == 0) return;
-        const uint32_t required = m_size + sv.size;
+        if (sv.empty()) return;
+        const uint32_t required = m_size + sv.size();
         if (required > m_capacity) {
             uint32_t newCap = m_capacity ? (m_capacity + m_capacity / 2) : 16;
             if (newCap < required) newCap = required;
             growTo(newCap);
         }
-        std::memcpy(m_data + m_size, sv.data, sv.size);
-        m_size += sv.size;
+        std::memcpy(m_data + m_size, sv.data(), sv.size());
+        m_size += sv.size();
         m_data[m_size] = '\0';
     }
 

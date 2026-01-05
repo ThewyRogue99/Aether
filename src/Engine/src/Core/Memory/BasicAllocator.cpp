@@ -7,6 +7,10 @@
 #include <Aether/Core/Assert.h>
 #include <new>
 
+constexpr bool isPowerOfTwo(uint32_t x) {
+    return x != 0 && (x & (x - 1)) == 0;
+}
+
 namespace Aether::Core {
     BasicAllocator::BasicAllocator() = default;
     BasicAllocator::~BasicAllocator() = default;
