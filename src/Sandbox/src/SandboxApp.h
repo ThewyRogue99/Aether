@@ -10,7 +10,7 @@ namespace Aether::Log {
     class Sink;
 }
 
-class SandboxApp : public Aether::Core::Application {
+class SandboxApp : public Aether::Engine::Application {
 public:
     SandboxApp(int argc, char** argv);
     ~SandboxApp() override;

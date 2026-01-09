@@ -7,7 +7,7 @@
 #include "Core.h"
 #include "StringView.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class BasicAllocator;
 
     class AETHER_API String {

@@ -10,7 +10,7 @@ namespace Aether::Log {
     static std::unique_ptr<Logger> s_Logger;
     static std::unique_ptr<Logger> s_FallbackLogger;
 
-    void SetLogger(Core::Scope<Logger> logger) {
+    void SetLogger(Engine::Scope<Logger> logger) {
         s_Logger = std::move(logger);
     }
 

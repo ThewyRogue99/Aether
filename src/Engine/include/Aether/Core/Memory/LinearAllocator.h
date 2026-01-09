@@ -9,7 +9,7 @@
 
 #include "Aether/Core/Core.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class AETHER_API LinearAllocator {
     public:
         explicit LinearAllocator(uint32_t blockSize = 256 * 1024);

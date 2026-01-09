@@ -6,7 +6,7 @@
 
 #include "RuntimeObject.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     template<typename T>
     concept RuntimeObjectType = std::is_base_of_v<RuntimeObjectBase, T>;
 

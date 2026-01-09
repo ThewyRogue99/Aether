@@ -7,7 +7,7 @@
 #include <Memory/TempAllocator.h>
 #include <Aether/Core/Memory/LinearAllocator.h>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     StringBuilder::StringBuilder() = default;
 
     void StringBuilder::clear() {

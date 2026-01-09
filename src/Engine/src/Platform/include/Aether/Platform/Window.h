@@ -6,21 +6,24 @@
 
 #include <memory>
 
+namespace Aether::Engine {
+    class EventQueue;
+}
+
 namespace Aether::Platform {
     struct WindowProps {
         const char* Title;
         unsigned int Width;
         unsigned int Height;
 
-        WindowProps(
+        explicit WindowProps(
             const char* Title = "Aether",
             const unsigned int Width = 1280,
             const unsigned int Height = 720
         ) : Title(Title), Width(Width), Height(Height) { }
     };
 
-    class Window
-    {
+    class Window {
     public:
         virtual ~Window();
 
@@ -31,6 +34,8 @@ namespace Aether::Platform {
 
         [[nodiscard]] virtual const char* GetTitle() const = 0;
         virtual void SetTitle(const char* title) = 0;
+
+        virtual void SetEventQueue(Engine::EventQueue* queue) = 0;
 
         [[nodiscard]] virtual bool ShouldClose() const = 0;
 

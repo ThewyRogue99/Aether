@@ -15,7 +15,7 @@ constexpr bool isPowerOfTwo(uint32_t x) {
     return x != 0 && (x & (x - 1)) == 0;
 }
 
-namespace Aether::Core {
+namespace Aether::Engine {
     LinearAllocator::LinearAllocator(uint32_t blockSize) : m_blockSize(blockSize) {}
 
     LinearAllocator::~LinearAllocator() { reset(true); }

@@ -26,14 +26,25 @@ namespace Aether::Platform {
         [[nodiscard]] const char* GetTitle() const override;
         void SetTitle(const char* title) override;
 
+        void SetEventQueue(Engine::EventQueue* queue) override;
+
         [[nodiscard]] bool ShouldClose() const override;
 
         [[nodiscard]] void* GetNativeWindow() const override;
+
+    private:
+        void InitCallbacks();
+
+        void OnKey(int key, int action);
+        void OnMouseMove(float x, float y);
+        void OnMouseButton(int button, int action);
 
     private:
         GLFWwindow* m_Window = nullptr;
 
         std::string m_Title;
         unsigned int m_Width, m_Height;
+
+        Engine::EventQueue* m_EventQueue = nullptr;
     };
 }

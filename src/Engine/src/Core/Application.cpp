@@ -7,29 +7,62 @@
 #include <Aether/Platform/Window.h>
 #include <Aether/Platform/Platform.h>
 
-namespace Aether::Core {
-    Application::Application(const String& name, int argc, char** argv) {
-        m_Args = { argc, argv };
+#include <Aether/Events/Event.h>
+#include <Aether/Events/EventQueue.h>
+#include <Aether/Events/WindowEvent.h>
+#include <Aether/Events/EventDispatcher.h>
 
-        Platform::Platform::Init();
+#include <Aether/Core/Layer.h>
+#include <Aether/Core/LayerStack.h>
 
-        m_Window = Platform::Window::Create(Platform::WindowProps(name.c_str()));
-    }
+#include <Aether/Input/Input.h>
 
-    Application::~Application() {
-        Shutdown();
-    }
+namespace Aether::Engine {
+    class Application::Impl {
+    public:
+        Impl(const String& name, int argc, char** argv) : m_Name(name), m_Args({ argc, argv }) {
+            Platform::Platform::Init();
+
+            m_Window = Platform::Window::Create(Platform::WindowProps(name.c_str()));
+            m_Window->SetEventQueue(&m_EventQueue);
+        }
+
+        String m_Name;
+        CommandLineArgs m_Args;
+
+        bool m_Running = true;
+        double m_LastFrameTime = 0.0;
+
+        EventQueue m_EventQueue;
+        LayerStack m_LayerStack;
+
+        Scope<Platform::Window> m_Window;
+    };
+
+    Application::Application(const String& name, int argc, char** argv)
+        : m_Impl(MakeScope<Impl>(name, argc, argv)) { }
+
+    Application::~Application() { Shutdown(); }
 
     void Application::Run() {
         OnInit();
 
-        while (m_Running && !m_Window->ShouldClose()) {
+        while (m_Impl->m_Running && !m_Impl->m_Window->ShouldClose()) {
             const auto currentTime = Platform::Platform::GetTime();
-            const auto deltaTime = static_cast<float>(currentTime - m_LastFrameTime);
+            const auto deltaTime = static_cast<float>(currentTime - m_Impl->m_LastFrameTime);
 
-            m_LastFrameTime = currentTime;
+            m_Impl->m_LastFrameTime = currentTime;
 
-            m_Window->OnUpdate();
+            m_Impl->m_Window->OnUpdate();
+
+            while (!m_Impl->m_EventQueue.Empty()) {
+                auto event = m_Impl->m_EventQueue.Pop();
+                OnEvent(*event);
+            }
+
+            for (const auto& layer : m_Impl->m_LayerStack)
+                layer->OnUpdate(deltaTime);
+
             OnUpdate(deltaTime);
         }
 
@@ -37,11 +70,19 @@ namespace Aether::Core {
     }
 
     void Application::Close() {
-        m_Running = false;
+        m_Impl->m_Running = false;
+    }
+
+    void Application::PushLayer(Scope<Layer> layer) {
+        m_Impl->m_LayerStack.PushLayer(std::move(layer));
+    }
+
+    void Application::PushOverlay(Scope<Layer> overlay) {
+        m_Impl->m_LayerStack.PushOverlay(std::move(overlay));
     }
 
     Platform::Window& Application::GetWindow() const {
-        return *m_Window;
+        return *m_Impl->m_Window;
     }
 
     void Application::OnInit() { }
@@ -49,6 +90,22 @@ namespace Aether::Core {
     void Application::OnShutdown() { }
 
     void Application::OnUpdate(float DeltaTime) { }
+
+    void Application::OnEvent(Event& e) {
+        Input::OnEvent(e);
+
+        EventDispatcher dispatcher(e);
+        dispatcher.Dispatch<WindowCloseEvent>([this](WindowCloseEvent&) {
+            m_Impl->m_Running = false;
+            return true;
+        });
+
+        for (auto it = m_Impl->m_LayerStack.rbegin(); it != m_Impl->m_LayerStack.rend(); ++it) {
+            (*it)->OnEvent(e);
+
+            if (e.Handled) break;
+        }
+    }
 
     void Application::Shutdown() {
         OnShutdown();

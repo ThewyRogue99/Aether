@@ -6,7 +6,7 @@
 
 #include "String.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class StringView;
 
     class AETHER_API Name {

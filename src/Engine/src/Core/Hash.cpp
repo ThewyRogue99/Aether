@@ -6,7 +6,7 @@
 
 #include <Aether/Core/StringView.h>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     uint32_t FNV1a32(const StringView& sv) {
         uint32_t h = 2166136261u;
         for (uint32_t i = 0; i < sv.size(); ++i) {

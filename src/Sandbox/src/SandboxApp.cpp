@@ -7,6 +7,8 @@
 #include <Aether/Log/Log.h>
 #include <Aether/Log/StdColorSink.h>
 
+#include "SandboxLayer.h"
+
 SandboxApp::SandboxApp(int argc, char** argv)
     : Application("Aether Sandbox", argc, argv), m_LogSink(std::make_unique<Aether::Log::StdColorSink>()) { }
 
@@ -20,4 +22,6 @@ void SandboxApp::OnInit() {
     auto& logger = Aether::Log::GetLogger();
     logger.AddSink(*m_LogSink);
     logger.SetLevel(Aether::Log::LogLevel::Trace);
+
+    PushLayer(Aether::Engine::MakeScope<SandboxLayer>());
 }

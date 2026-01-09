@@ -8,7 +8,7 @@
 
 #include "Core.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class StringView;
 
     AETHER_API uint32_t FNV1a32(const StringView& sv);

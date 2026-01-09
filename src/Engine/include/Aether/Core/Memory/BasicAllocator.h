@@ -8,7 +8,7 @@
 
 #include "Aether/Core/Core.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class AETHER_API BasicAllocator {
     public:
         BasicAllocator();

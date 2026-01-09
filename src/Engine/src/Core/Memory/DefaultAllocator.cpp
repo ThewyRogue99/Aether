@@ -6,7 +6,7 @@
 
 #include <Aether/Core/Memory/BasicAllocator.h>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     BasicAllocator& DefaultAllocator() {
         thread_local BasicAllocator allocator;
         return allocator;

@@ -12,6 +12,8 @@ set(ENGINE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(Core)
 add_subdirectory(Platform)
 add_subdirectory(Log)
+add_subdirectory(Input)
+add_subdirectory(Events)
 
 target_include_directories(aether_engine PUBLIC
     ${ENGINE_INCLUDE_DIR}
@@ -25,6 +27,8 @@ target_link_libraries(aether_engine
         Aether::Engine::Core
         Aether::Engine::Log
         Aether::Engine::Platform
+        Aether::Engine::Input
+        Aether::Engine::Events
 )
 
 add_library(Aether::Engine ALIAS aether_engine)

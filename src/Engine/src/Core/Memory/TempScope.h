@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class TempScope {
     public:
         TempScope();

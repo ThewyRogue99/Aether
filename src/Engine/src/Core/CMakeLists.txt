@@ -6,6 +6,8 @@ add_library(aether_engine_core STATIC
     RuntimeObject.cpp
     Hash.cpp
     Name.cpp
+    Layer.cpp
+    LayerStack.cpp
 )
 
 target_include_directories(aether_engine_core PRIVATE ${ENGINE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})

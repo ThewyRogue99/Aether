@@ -4,7 +4,7 @@
 
 #include <Aether/Platform/Window.h>
 
-#include "glfw/GLFWWindow.h"
+#include <glfw/GLFWWindow.h>
 
 namespace Aether::Platform {
     Window::~Window() = default;

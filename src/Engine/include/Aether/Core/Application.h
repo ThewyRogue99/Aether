@@ -12,13 +12,15 @@ namespace Aether::Platform {
     class Window;
 }
 
-namespace Aether::Core {
+namespace Aether::Engine {
+    class Layer;
+    class Event;
+
     struct AETHER_API CommandLineArgs {
         int Count = 0;
         char** Values = nullptr;
 
-        const char* operator[](int index) const
-        {
+        const char* operator[](int index) const {
             return Values[index];
         }
     };
@@ -32,23 +34,22 @@ namespace Aether::Core {
         void Run();
         void Close();
 
+        void PushLayer(Scope<Layer> layer);
+        void PushOverlay(Scope<Layer> overlay);
+
         [[nodiscard]] Platform::Window& GetWindow() const;
 
     protected:
         virtual void OnInit();
         virtual void OnShutdown();
         virtual void OnUpdate(float DeltaTime);
+        virtual void OnEvent(Event& e);
 
     private:
         void Shutdown();
 
     private:
-        String m_Name;
-        CommandLineArgs m_Args;
-
-        bool m_Running = true;
-        double m_LastFrameTime = 0.0;
-
-        Scope<Platform::Window> m_Window;
+        class Impl;
+        Scope<Impl> m_Impl;
     };
 }

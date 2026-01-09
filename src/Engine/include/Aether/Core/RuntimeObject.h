@@ -9,7 +9,7 @@
 
 #include "Core.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     using TypeId = uint32_t;
 
     AETHER_API TypeId GetNextTypeId();

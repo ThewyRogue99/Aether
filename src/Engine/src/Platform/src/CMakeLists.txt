@@ -1,6 +1,6 @@
 add_library(aether_engine_platform STATIC Platform.cpp Window.cpp)
 
-target_include_directories(aether_engine_platform PUBLIC ${PLATFORM_INCLUDE_DIR})
+target_include_directories(aether_engine_platform PUBLIC ${ENGINE_INCLUDE_DIR} ${PLATFORM_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(glfw)
 

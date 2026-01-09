@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     template<typename T>
     using Scope = std::unique_ptr<T>;
 

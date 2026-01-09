@@ -6,7 +6,7 @@
 
 #include <Aether/Core/Memory/LinearAllocator.h>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class LinearAllocator;
 
     LinearAllocator& NameAllocator() {

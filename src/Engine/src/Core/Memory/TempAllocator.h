@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class LinearAllocator;
 
     LinearAllocator& TempAllocator();

@@ -4,9 +4,8 @@
 
 #include <Aether/Core/RuntimeObject.h>
 
-namespace Aether::Core {
-    TypeId GetNextTypeId()
-    {
+namespace Aether::Engine {
+    TypeId GetNextTypeId() {
         static TypeId counter = 0;
         return counter++;
     }

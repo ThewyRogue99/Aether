@@ -8,7 +8,7 @@
 
 #include "StringView.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class AETHER_API StringBuilder {
     public:
         StringBuilder();

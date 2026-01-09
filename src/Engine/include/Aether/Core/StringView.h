@@ -8,7 +8,7 @@
 
 #include <string_view>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class AETHER_API StringView {
     public:
         StringView();

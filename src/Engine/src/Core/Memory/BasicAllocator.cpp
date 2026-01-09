@@ -11,7 +11,7 @@ constexpr bool isPowerOfTwo(uint32_t x) {
     return x != 0 && (x & (x - 1)) == 0;
 }
 
-namespace Aether::Core {
+namespace Aether::Engine {
     BasicAllocator::BasicAllocator() = default;
     BasicAllocator::~BasicAllocator() = default;
 

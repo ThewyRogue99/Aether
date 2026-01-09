@@ -8,7 +8,7 @@
 
 #include <Aether/Core/Memory/LinearAllocator.h>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class TempScope::Impl {
     public:
         Impl() : m_alloc(TempAllocator()) , m_marker(m_alloc.mark()) { }

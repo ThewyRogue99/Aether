@@ -7,7 +7,7 @@
 #include "Assert.h"
 #include "StringView.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     enum class AETHER_API SmallStringOverflow : uint8_t {
         Assert,
         Truncate,

@@ -1,1 +1,1 @@
-target_sources(aether_engine_platform PRIVATE GLFWWindow.cpp)
+target_sources(aether_engine_platform PRIVATE GLFWWindow.cpp GLFWInput.cpp)

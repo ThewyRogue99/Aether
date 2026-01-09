@@ -15,7 +15,7 @@
 
 #include "Memory/NameAllocator.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     class Name::Impl {
     public:
         Impl() = default;

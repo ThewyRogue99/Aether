@@ -33,6 +33,6 @@ do { \
 #define AETHER_FATAL(...)  AETHER_LOG_INTERNAL(::Aether::Log::LogLevel::Fatal, __VA_ARGS__)
 
 namespace Aether::Log {
-    AETHER_API void SetLogger(Core::Scope<Logger> logger);
+    AETHER_API void SetLogger(Engine::Scope<Logger> logger);
     AETHER_API Logger& GetLogger();
 }

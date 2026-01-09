@@ -6,7 +6,7 @@
 
 #include <Aether/Core/Assert.h>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     StringView::StringView() = default;
     StringView::StringView(const char* d, uint32_t n) : m_Data(d), m_Size(n) { }
 

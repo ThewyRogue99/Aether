@@ -6,7 +6,7 @@
 
 #include <Aether/Core/Memory/LinearAllocator.h>
 
-namespace Aether::Core {
+namespace Aether::Engine {
     LinearAllocator& TempAllocator() {
         thread_local LinearAllocator allocator(256 * 1024);
         return allocator;

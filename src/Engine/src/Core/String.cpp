@@ -9,7 +9,7 @@
 
 #include "Memory/DefaultAllocator.h"
 
-namespace Aether::Core {
+namespace Aether::Engine {
     String::String() = default;
 
     String::String(const String& other)
