@@ -13,9 +13,14 @@
 #include <Aether/Events/EventDispatcher.h>
 
 #include <Aether/Core/Layer.h>
+#include <Aether/Core/Assert.h>
 #include <Aether/Core/LayerStack.h>
 
 #include <Aether/Input/Input.h>
+
+namespace {
+    Aether::Engine::Application* s_Instance = nullptr;
+}
 
 namespace Aether::Engine {
     class Application::Impl {
@@ -40,7 +45,10 @@ namespace Aether::Engine {
     };
 
     Application::Application(const String& name, int argc, char** argv)
-        : m_Impl(MakeScope<Impl>(name, argc, argv)) { }
+        : m_Impl(MakeScope<Impl>(name, argc, argv)) {
+        AETHER_ASSERT(!s_Instance, "An application already exists");
+        s_Instance = this;
+    }
 
     Application::~Application() { Shutdown(); }
 
@@ -83,6 +91,11 @@ namespace Aether::Engine {
 
     Platform::Window& Application::GetWindow() const {
         return *m_Impl->m_Window;
+    }
+
+    Application& Application::Get() {
+        AETHER_ASSERT(s_Instance, "No application initialized");
+        return *s_Instance;
     }
 
     void Application::OnInit() { }

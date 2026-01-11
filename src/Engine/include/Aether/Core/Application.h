@@ -25,8 +25,7 @@ namespace Aether::Engine {
         }
     };
 
-    class AETHER_API Application
-    {
+    class AETHER_API Application {
     public:
         explicit Application(const String& name, int argc, char** argv);
         virtual ~Application();
@@ -38,6 +37,8 @@ namespace Aether::Engine {
         void PushOverlay(Scope<Layer> overlay);
 
         [[nodiscard]] Platform::Window& GetWindow() const;
+
+        static Application& Get();
 
     protected:
         virtual void OnInit();
@@ -52,4 +53,6 @@ namespace Aether::Engine {
         class Impl;
         Scope<Impl> m_Impl;
     };
+
+    Application* CreateApplication(int argc, char** argv);
 }
