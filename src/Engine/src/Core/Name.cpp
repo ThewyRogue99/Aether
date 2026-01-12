@@ -80,10 +80,10 @@ namespace Aether::Engine {
         uint32_t m_id = 0;
     };
 
-    Name::Name() : m_impl(std::make_unique<Impl>()) { };
+    Name::Name() : m_impl(MakeScope<Impl>()) { };
 
-    Name::Name(StringView& sv) : m_impl(std::make_unique<Impl>(sv)) { };
-    Name::Name(const char* cstr) : m_impl(std::make_unique<Impl>(cstr)) { };
+    Name::Name(StringView& sv) : m_impl(MakeScope<Impl>(sv)) { };
+    Name::Name(const char* cstr) : m_impl(MakeScope<Impl>(cstr)) { };
 
     uint32_t Name::id() const { return m_impl->m_id; }
     Name::operator bool() const { return m_impl->m_id != 0; }

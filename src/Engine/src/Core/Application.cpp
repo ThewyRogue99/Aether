@@ -18,6 +18,8 @@
 
 #include <Aether/Input/Input.h>
 
+#include <Aether/Renderer/Renderer.h>
+
 namespace {
     Aether::Engine::Application* s_Instance = nullptr;
 }
@@ -25,11 +27,41 @@ namespace {
 namespace Aether::Engine {
     class Application::Impl {
     public:
-        Impl(const String& name, int argc, char** argv) : m_Name(name), m_Args({ argc, argv }) {
+        Impl(const String& name, int argc, char** argv) : m_Name(name), m_Args({ argc, argv }) { }
+
+        void Init() {
             Platform::Platform::Init();
 
-            m_Window = Platform::Window::Create(Platform::WindowProps(name.c_str()));
+            m_Window = Platform::Window::Create(Platform::WindowProps(m_Name.c_str()));
             m_Window->SetEventQueue(&m_EventQueue);
+        }
+
+        void Run() {
+            while (m_Running && !m_Window->ShouldClose()) {
+                const auto currentTime = Platform::Platform::GetTime();
+                const auto deltaTime = static_cast<float>(currentTime - m_LastFrameTime);
+
+                m_LastFrameTime = currentTime;
+
+                m_Window->OnUpdate();
+
+                while (!m_EventQueue.Empty()) {
+                    auto event = m_EventQueue.Pop();
+                    s_Instance->OnEvent(*event);
+                }
+
+                for (const auto& layer : m_LayerStack)
+                    layer->OnUpdate(deltaTime);
+
+                s_Instance->OnUpdate(deltaTime);
+
+                Renderer::Renderer::BeginFrame();
+
+                Renderer::Renderer::SetClearColor(0.1f, 0.1f, 0.12f, 1.0f);
+                Renderer::Renderer::Clear();
+
+                Renderer::Renderer::EndFrame();
+            }
         }
 
         String m_Name;
@@ -53,26 +85,9 @@ namespace Aether::Engine {
     Application::~Application() { Shutdown(); }
 
     void Application::Run() {
-        OnInit();
+        Init();
 
-        while (m_Impl->m_Running && !m_Impl->m_Window->ShouldClose()) {
-            const auto currentTime = Platform::Platform::GetTime();
-            const auto deltaTime = static_cast<float>(currentTime - m_Impl->m_LastFrameTime);
-
-            m_Impl->m_LastFrameTime = currentTime;
-
-            m_Impl->m_Window->OnUpdate();
-
-            while (!m_Impl->m_EventQueue.Empty()) {
-                auto event = m_Impl->m_EventQueue.Pop();
-                OnEvent(*event);
-            }
-
-            for (const auto& layer : m_Impl->m_LayerStack)
-                layer->OnUpdate(deltaTime);
-
-            OnUpdate(deltaTime);
-        }
+        m_Impl->Run();
 
         Shutdown();
     }
@@ -120,7 +135,17 @@ namespace Aether::Engine {
         }
     }
 
+    void Application::Init() {
+        m_Impl->Init();
+
+        Renderer::Renderer::Init({ m_Impl->m_Window.get() });
+
+        OnInit();
+    }
+
     void Application::Shutdown() {
+        Renderer::Renderer::Shutdown();
+
         OnShutdown();
         // Add additional cleanup if necessary
     }

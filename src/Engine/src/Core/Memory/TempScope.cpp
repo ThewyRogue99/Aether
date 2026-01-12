@@ -18,7 +18,7 @@ namespace Aether::Engine {
         LinearAllocator::Marker m_marker;
     };
 
-    TempScope::TempScope() : m_impl(std::make_unique<Impl>()) { }
+    TempScope::TempScope() : m_impl(MakeScope<Impl>()) { }
 
     TempScope::~TempScope() = default;
 }

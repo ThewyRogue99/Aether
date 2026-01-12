@@ -17,7 +17,7 @@ namespace Aether::Log {
         std::shared_ptr<spdlog::sinks::sink> Native;
     };
 
-    StdColorSink::StdColorSink() : m_Impl(std::make_unique<Impl>()) { }
+    StdColorSink::StdColorSink() : m_Impl(Engine::MakeScope<Impl>()) { }
 
     StdColorSink::~StdColorSink() = default;
 

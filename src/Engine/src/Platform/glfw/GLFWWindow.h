@@ -13,6 +13,8 @@ extern "C" {
 }
 
 namespace Aether::Platform {
+    class GLFWGraphicsContext;
+
     class GLFWWindow : public Window {
     public:
         explicit GLFWWindow(const WindowProps& props);
@@ -30,7 +32,7 @@ namespace Aether::Platform {
 
         [[nodiscard]] bool ShouldClose() const override;
 
-        [[nodiscard]] void* GetNativeWindow() const override;
+        [[nodiscard]] GraphicsContext* GetGraphicsContext() const override;
 
     private:
         void InitCallbacks();
@@ -39,11 +41,14 @@ namespace Aether::Platform {
         void OnMouseMove(float x, float y);
         void OnMouseButton(int button, int action);
 
+        [[nodiscard]] GLFWwindow* GetWindowHandle() const;
+
     private:
-        GLFWwindow* m_Window = nullptr;
+        std::unique_ptr<GLFWGraphicsContext> m_Context;
 
         std::string m_Title;
         unsigned int m_Width, m_Height;
+        GraphicsAPI m_API;
 
         Engine::EventQueue* m_EventQueue = nullptr;
     };

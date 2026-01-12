@@ -14,6 +14,7 @@ add_subdirectory(Platform)
 add_subdirectory(Log)
 add_subdirectory(Input)
 add_subdirectory(Events)
+add_subdirectory(Renderer)
 
 target_include_directories(aether_engine PUBLIC
     ${ENGINE_INCLUDE_DIR}
@@ -29,6 +30,7 @@ target_link_libraries(aether_engine
         Aether::Engine::Platform
         Aether::Engine::Input
         Aether::Engine::Events
+        Aether::Engine::Renderer
 )
 
 add_library(Aether::Engine ALIAS aether_engine)

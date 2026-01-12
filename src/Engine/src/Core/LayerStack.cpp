@@ -30,7 +30,7 @@ namespace Aether::Engine {
         const auto it = std::find_if(
             m_Layers.begin(),
             m_Layers.begin() + m_LayerInsertIndex,
-            [layer](const std::unique_ptr<Layer>& ptr)
+            [layer](const Scope<Layer>& ptr)
             {
                 return ptr.get() == layer;
             }
@@ -47,7 +47,7 @@ namespace Aether::Engine {
         const auto it = std::find_if(
             m_Layers.begin() + m_LayerInsertIndex,
             m_Layers.end(),
-            [overlay](const std::unique_ptr<Layer>& ptr) {
+            [overlay](const Scope<Layer>& ptr) {
                 return ptr.get() == overlay;
             }
         );

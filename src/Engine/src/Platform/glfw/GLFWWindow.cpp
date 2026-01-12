@@ -12,14 +12,37 @@
 
 #include <glfw/GLFWInput.h>
 
+#include "GLFWGraphicsContext.h"
+
 namespace Aether::Platform {
     GLFWWindow::GLFWWindow(const WindowProps& props) {
         m_Title = props.Title;
         m_Width = props.Width;
         m_Height = props.Height;
+        m_API = props.API;
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_Window = glfwCreateWindow(
+        switch (m_API) {
+            case GraphicsAPI::OpenGL: {
+                glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+
+#if defined(AETHER_PLATFORM_MACOS)
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+                glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#else
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+                glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_FALSE);
+#endif
+            } break;
+            default: {
+                glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+            } break;
+        }
+
+        const auto window = glfwCreateWindow(
             static_cast<int>(props.Width),
             static_cast<int>(props.Height),
             props.Title,
@@ -27,17 +50,21 @@ namespace Aether::Platform {
             nullptr
         );
 
-        glfwSetWindowUserPointer(m_Window, this);
+        m_Context = std::make_unique<GLFWGraphicsContext>(window, m_API);
+
+        glfwSetWindowUserPointer(window, this);
 
         InitCallbacks();
+
+        glfwMakeContextCurrent(nullptr);
     }
 
     GLFWWindow::~GLFWWindow() {
-        glfwDestroyWindow(m_Window);
+        glfwDestroyWindow(GetWindowHandle());
     }
 
     void GLFWWindow::OnUpdate() {
-        if (m_Window) {
+        if (GetWindowHandle()) {
             glfwPollEvents();
         }
     }
@@ -57,7 +84,7 @@ namespace Aether::Platform {
     void GLFWWindow::SetTitle(const char* title) {
         m_Title = title;
 
-        glfwSetWindowTitle(m_Window, title);
+        glfwSetWindowTitle(GetWindowHandle(), title);
     }
 
     void GLFWWindow::SetEventQueue(Engine::EventQueue* queue) {
@@ -65,27 +92,27 @@ namespace Aether::Platform {
     }
 
     bool GLFWWindow::ShouldClose() const {
-        return glfwWindowShouldClose(m_Window);
+        return glfwWindowShouldClose(GetWindowHandle());
     }
 
-    void* GLFWWindow::GetNativeWindow() const {
-        return m_Window;
+    GraphicsContext* GLFWWindow::GetGraphicsContext() const {
+        return m_Context.get();
     }
 
     void GLFWWindow::InitCallbacks() {
-        glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        glfwSetKeyCallback(GetWindowHandle(), [](GLFWwindow* window, int key, int scancode, int action, int mods) {
             auto* self = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
 
             self->OnKey(key, action);
         });
 
-        glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double x, double y) {
+        glfwSetCursorPosCallback(GetWindowHandle(), [](GLFWwindow* window, double x, double y) {
             auto* self = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
 
             self->OnMouseMove(static_cast<float>(x), static_cast<float>(y));
         });
 
-        glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods) {
+        glfwSetMouseButtonCallback(GetWindowHandle(), [](GLFWwindow* window, int button, int action, int mods) {
             auto* self = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
 
             self->OnMouseButton(button, action);
@@ -120,5 +147,9 @@ namespace Aether::Platform {
                 m_EventQueue->Push(std::make_unique<Engine::MouseButtonReleasedEvent>(mb));
             }
         }
+    }
+
+    GLFWwindow* GLFWWindow::GetWindowHandle() const {
+        return m_Context->GetWindowHandle();
     }
 }

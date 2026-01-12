@@ -6,6 +6,7 @@
 
 #include <Aether/Log/Sink.h>
 #include <Aether/Core/Core.h>
+#include <Aether/Core/Memory/Pointer.h>
 
 namespace Aether::Log {
     class AETHER_API StdColorSink : public Sink {
@@ -17,6 +18,6 @@ namespace Aether::Log {
 
     private:
         class Impl;
-        std::unique_ptr<Impl> m_Impl;
+        Engine::Scope<Impl> m_Impl;
     };
 }

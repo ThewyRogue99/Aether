@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include <memory>
-
 #include <Aether/Log/LogLevel.h>
+#include <Aether/Core/Memory/Pointer.h>
 
 namespace spdlog {
     class logger;
@@ -28,7 +27,7 @@ namespace Aether::Log {
         void Log(LogLevel level, const char* fmt, ...);
 
     private:
-        std::unique_ptr<spdlog::logger> m_Logger;
+        Engine::Scope<spdlog::logger> m_Logger;
         LogLevel m_Level = LogLevel::Info;
     };
 }

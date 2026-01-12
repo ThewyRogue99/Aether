@@ -6,6 +6,8 @@
 
 #include <memory>
 
+#include <Aether/Platform/GraphicsContext.h>
+
 namespace Aether::Engine {
     class EventQueue;
 }
@@ -15,12 +17,14 @@ namespace Aether::Platform {
         const char* Title;
         unsigned int Width;
         unsigned int Height;
+        GraphicsAPI API;
 
         explicit WindowProps(
             const char* Title = "Aether",
             const unsigned int Width = 1280,
-            const unsigned int Height = 720
-        ) : Title(Title), Width(Width), Height(Height) { }
+            const unsigned int Height = 720,
+            const GraphicsAPI API = GraphicsAPI::OpenGL
+        ) : Title(Title), Width(Width), Height(Height), API(API) { }
     };
 
     class Window {
@@ -39,7 +43,7 @@ namespace Aether::Platform {
 
         [[nodiscard]] virtual bool ShouldClose() const = 0;
 
-        [[nodiscard]] virtual void* GetNativeWindow() const = 0;
+        [[nodiscard]] virtual GraphicsContext* GetGraphicsContext() const = 0;
 
         static std::unique_ptr<Window> Create(const WindowProps& props = WindowProps());
     };

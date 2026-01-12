@@ -19,18 +19,18 @@
 #include "NullSink.h"
 
 namespace Aether::Log {
-    static std::unique_ptr<Sink> s_NullSink;
+    static Engine::Scope<Sink> s_NullSink;
 
     static spdlog::level::level_enum ToSpd(LogLevel lvl) {
         return static_cast<spdlog::level::level_enum>(lvl);
     }
 
     Logger::Logger(const char* name) {
-        m_Logger = std::make_unique<spdlog::logger>(name);
+        m_Logger = Engine::MakeScope<spdlog::logger>(name);
         m_Logger->set_level(spdlog::level::trace);
 
         if (!s_NullSink) {
-            s_NullSink = std::make_unique<NullSink>();
+            s_NullSink = Engine::MakeScope<NullSink>();
         }
 
         // Safety: always have at least one sink

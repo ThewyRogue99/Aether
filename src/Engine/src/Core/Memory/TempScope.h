@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <memory>
+#include <Aether/Core/Memory/Pointer.h>
 
 namespace Aether::Engine {
     class TempScope {
@@ -17,6 +17,6 @@ namespace Aether::Engine {
 
     private:
         class Impl;
-        std::unique_ptr<Impl> m_impl;
+        Scope<Impl> m_impl;
     };
 }

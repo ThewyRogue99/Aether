@@ -47,6 +47,7 @@ namespace Aether::Engine {
         virtual void OnEvent(Event& e);
 
     private:
+        void Init();
         void Shutdown();
 
     private:
