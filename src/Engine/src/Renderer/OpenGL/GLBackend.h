@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <Aether/Core/Memory/Pointer.h>
 #include <Aether/Renderer/RenderBackend.h>
 
 namespace Aether::Platform {
@@ -31,13 +32,12 @@ namespace Aether::Renderer {
 
         void Present() override;
 
+        BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData) override;
+        void DestroyBuffer(const BufferHandle& handle) override;
+        void UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void* data, uint32_t size) override;
+
     private:
-        Platform::GraphicsContext* m_Context = nullptr;
-
-        unsigned int m_Width  = 0;
-        unsigned int m_Height = 0;
-
-        float m_ClearColor[4] = { 0.f, 0.f, 0.f, 1.f };
-        bool m_InFrame = false;
+        class Impl;
+        Engine::Scope<Impl> m_Impl;
     };
 }

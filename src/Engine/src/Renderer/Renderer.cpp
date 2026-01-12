@@ -16,6 +16,7 @@
 namespace Aether::Renderer {
     static RenderThread s_RenderThread;
     static Engine::Scope<RenderBackend> s_Backend;
+    static uint64_t s_FrameIndex = 0;
 
     static Platform::Window* s_Window = nullptr;
 
@@ -75,6 +76,8 @@ namespace Aether::Renderer {
                 s_Backend->Present();
             }
         });
+
+        ++s_FrameIndex;
     }
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {
@@ -91,5 +94,32 @@ namespace Aether::Renderer {
 
     RenderAPI Renderer::GetAPI() {
         return s_Backend ? s_Backend->API() : RenderAPI::None;
+    }
+
+    uint64_t Renderer::GetFrameIndex() {
+        return s_FrameIndex;
+    }
+
+    BufferHandle Renderer::CreateBuffer(const BufferDesc& desc, const void* initialData) {
+        BufferHandle handle;
+
+        s_RenderThread.Enqueue([&]() {
+            handle = s_Backend->CreateBuffer(desc, initialData);
+        });
+
+        s_RenderThread.Flush();
+        return handle;
+    }
+
+    void Renderer::DestroyBuffer(const BufferHandle& handle) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->DestroyBuffer(handle);
+        });
+    }
+
+    void Renderer::UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void *data, uint32_t size) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->UpdateBuffer(handle, offset, data, size);
+        });
     }
 }

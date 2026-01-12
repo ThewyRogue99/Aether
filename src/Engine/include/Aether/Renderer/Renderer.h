@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <cstdint>
+
+#include <Aether/Renderer/Buffer.h>
 #include <Aether/Renderer/RenderAPI.h>
 
 namespace Aether::Platform {
@@ -27,5 +30,11 @@ namespace Aether::Renderer {
         static void Clear();
 
         static RenderAPI GetAPI();
+
+        static uint64_t GetFrameIndex();
+
+        static BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr);
+        static void DestroyBuffer(const BufferHandle& handle);
+        static void UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void* data, uint32_t size);
     };
 }
