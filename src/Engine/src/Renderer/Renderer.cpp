@@ -122,4 +122,21 @@ namespace Aether::Renderer {
             s_Backend->UpdateBuffer(handle, offset, data, size);
         });
     }
+
+    ShaderHandle Renderer::CreateShader(const ShaderDesc& desc) {
+        ShaderHandle out;
+
+        s_RenderThread.Enqueue([&] {
+            out = s_Backend->CreateShader(desc);
+        });
+
+        s_RenderThread.Flush();
+        return out;
+    }
+
+    void Renderer::DestroyShader(const ShaderHandle& handle) {
+        s_RenderThread.Enqueue([=] {
+            s_Backend->DestroyShader(handle);
+        });
+    }
 }

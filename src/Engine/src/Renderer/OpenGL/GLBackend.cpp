@@ -4,6 +4,7 @@
 
 #include "GLBackend.h"
 
+#include <string>
 #include <unordered_map>
 
 #include <glad/gl.h>
@@ -37,6 +38,54 @@ namespace Aether::Renderer {
         return access == BufferAccess::Dynamic
             ? GL_DYNAMIC_DRAW
             : GL_STATIC_DRAW;
+    }
+
+    static GLuint CompileStage(GLenum stage, const char* src, const char* debugName)
+    {
+        AETHER_ASSERT(src && src[0] != '\0');
+
+        const GLuint sh = glCreateShader(stage);
+        glShaderSource(sh, 1, &src, nullptr);
+        glCompileShader(sh);
+
+        GLint ok = 0;
+        glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
+        if (!ok) {
+            GLint len = 0;
+            glGetShaderiv(sh, GL_INFO_LOG_LENGTH, &len);
+            std::string log(len, '\0');
+            glGetShaderInfoLog(sh, len, &len, log.data());
+            glDeleteShader(sh);
+
+            // TODO: Fix assertions
+            //AETHER_ASSERT(false, "Shader compile failed (%s)\n%s", debugName ? debugName : "unnamed", log.c_str());
+        }
+        return sh;
+    }
+
+    static GLuint LinkProgram(GLuint vs, GLuint fs, const char* debugName)
+    {
+        const GLuint prog = glCreateProgram();
+        glAttachShader(prog, vs);
+        glAttachShader(prog, fs);
+        glLinkProgram(prog);
+
+        GLint ok = 0;
+        glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+        if (!ok) {
+            GLint len = 0;
+            glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+            std::string log(len, '\0');
+            glGetProgramInfoLog(prog, len, &len, log.data());
+
+            glDeleteProgram(prog);
+            // TODO: Fix assertions
+            //AETHER_ASSERT(false, "Program link failed (%s)\n%s", (debugName ? debugName : "unnamed"), log.c_str());
+        }
+
+        glDetachShader(prog, vs);
+        glDetachShader(prog, fs);
+        return prog;
     }
 
     class GLBackend::Impl {
@@ -142,11 +191,42 @@ namespace Aether::Renderer {
             glBindBuffer(buf.target, 0);
         }
 
+        ShaderHandle CreateShader(const ShaderDesc& desc) {
+            const auto vs = CompileStage(GL_VERTEX_SHADER,   desc.vertexSource,   desc.debugName);
+            const auto fs = CompileStage(GL_FRAGMENT_SHADER, desc.fragmentSource, desc.debugName);
+            const auto prog = LinkProgram(vs, fs, desc.debugName);
+
+            glDeleteShader(vs);
+            glDeleteShader(fs);
+
+            uint32_t id = m_NextShaderId++;
+            m_Programs.emplace(id, GLShaderProgram{ .program = prog });
+            return ShaderHandle{ id };
+        }
+
+        void DestroyShader(const ShaderHandle& handle) {
+            const auto it = m_Programs.find(handle.id);
+            if (it == m_Programs.end()) return;
+
+            glDeleteProgram(it->second.program);
+            m_Programs.erase(it);
+        }
+
+        [[nodiscard]] uint32_t GetShaderProgram(const ShaderHandle& handle) const {
+            const auto it = m_Programs.find(handle.id);
+            AETHER_ASSERT(it != m_Programs.end());
+            return it->second.program;
+        }
+
     private:
         struct GLBuffer {
             GLuint id;
             GLenum target;
             uint32_t size;
+        };
+
+        struct GLShaderProgram {
+            GLuint program = 0;
         };
 
     private:
@@ -160,6 +240,9 @@ namespace Aether::Renderer {
 
         std::unordered_map<uint32_t, GLBuffer> m_Buffers;
         uint32_t m_NextBufferId = 1;
+
+        std::unordered_map<uint32_t, GLShaderProgram> m_Programs;
+        uint32_t m_NextShaderId = 1;
     };
 
     GLBackend::GLBackend() : m_Impl(Engine::MakeScope<Impl>()) { }
@@ -208,5 +291,17 @@ namespace Aether::Renderer {
 
     void GLBackend::UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void* data, uint32_t size) {
         m_Impl->UpdateBuffer(handle, offset, data, size);
+    }
+
+    ShaderHandle GLBackend::CreateShader(const ShaderDesc& desc) {
+        return m_Impl->CreateShader(desc);
+    }
+
+    void GLBackend::DestroyShader(const ShaderHandle& handle) {
+        m_Impl->DestroyShader(handle);
+    }
+
+    uint32_t GLBackend::GetShaderProgram(const ShaderHandle& handle) const {
+        return m_Impl->GetShaderProgram(handle);
     }
 }

@@ -36,6 +36,11 @@ namespace Aether::Renderer {
         void DestroyBuffer(const BufferHandle& handle) override;
         void UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void* data, uint32_t size) override;
 
+        ShaderHandle CreateShader(const ShaderDesc& desc) override;
+        void DestroyShader(const ShaderHandle& handle) override;
+
+        [[nodiscard]] uint32_t GetShaderProgram(const ShaderHandle& handle) const;
+
     private:
         class Impl;
         Engine::Scope<Impl> m_Impl;

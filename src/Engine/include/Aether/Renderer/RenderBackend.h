@@ -5,6 +5,7 @@
 #pragma once
 
 #include <Aether/Renderer/Buffer.h>
+#include <Aether/Renderer/Shader.h>
 #include <Aether/Renderer/RenderAPI.h>
 
 namespace Aether::Platform {
@@ -39,5 +40,8 @@ namespace Aether::Renderer {
         virtual BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData) = 0;
         virtual void DestroyBuffer(const BufferHandle& handle) = 0;
         virtual void UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void* data, uint32_t size) = 0;
+
+        virtual ShaderHandle CreateShader(const ShaderDesc& desc) = 0;
+        virtual void DestroyShader(const ShaderHandle& handle) = 0;
     };
 }
