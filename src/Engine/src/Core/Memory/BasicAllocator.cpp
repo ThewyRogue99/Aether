@@ -24,12 +24,12 @@ namespace Aether::Engine {
 
 #if defined(_MSC_VER)
         void* ptr = _aligned_malloc(size, alignment);
-        AETHER_ASSERT(ptr && "BasicAllocator: allocation failed");
+        AETHER_ASSERT_MSG(ptr, "BasicAllocator: allocation failed");
         return ptr;
 #else
         void* ptr = nullptr;
         int res = posix_memalign(&ptr, alignment, size);
-        AETHER_ASSERT(res == 0 && ptr && "BasicAllocator: allocation failed");
+        AETHER_ASSERT_MSG(res == 0 && ptr, "BasicAllocator: allocation failed");
         return ptr;
 #endif
     }

@@ -78,7 +78,7 @@ namespace Aether::Engine {
 
     Application::Application(const String& name, int argc, char** argv)
         : m_Impl(MakeScope<Impl>(name, argc, argv)) {
-        AETHER_ASSERT(!s_Instance, "An application already exists");
+        AETHER_ASSERT_MSG(!s_Instance, "An application already exists");
         s_Instance = this;
     }
 
@@ -109,7 +109,7 @@ namespace Aether::Engine {
     }
 
     Application& Application::Get() {
-        AETHER_ASSERT(s_Instance, "No application initialized");
+        AETHER_ASSERT_MSG(s_Instance, "No application initialized");
         return *s_Instance;
     }
 

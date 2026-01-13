@@ -29,7 +29,7 @@ namespace Aether::Renderer {
     }
 
     void Renderer::Init(const RendererInitInfo& info) {
-        AETHER_ASSERT(info.window, "Window cannot be null");
+        AETHER_ASSERT_MSG(info.window, "Window cannot be null");
         s_Window = info.window;
 
         const auto context = s_Window->GetGraphicsContext();

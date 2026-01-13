@@ -44,20 +44,20 @@ namespace Aether::Engine {
         }
 
         void append(StringView sv) {
-            if (sv.size == 0) return;
+            if (sv.size() == 0) return;
 
             const uint32_t cap = capacity();
             if (m_size + sv.size > cap) {
                 if constexpr (OverflowPolicy == SmallStringOverflow::Assert) {
-                    AETHER_ASSERT(false && "SmallString overflow");
+                    AETHER_ASSERT_MSG(false, "SmallString overflow");
                 } else {
                     const uint32_t remaining = (m_size < cap) ? (cap - m_size) : 0;
                     sv.size = remaining;
                 }
             }
 
-            if (sv.size > 0) {
-                std::memcpy(m_buf + m_size, sv.data, sv.size);
+            if (sv.size() > 0) {
+                std::memcpy(m_buf + m_size, sv.data(), sv.size());
                 m_size += sv.size;
                 m_buf[m_size] = '\0';
             }
@@ -67,7 +67,7 @@ namespace Aether::Engine {
             const uint32_t cap = capacity();
             if (m_size + 1 > cap) {
                 if constexpr (OverflowPolicy == SmallStringOverflow::Assert) {
-                    AETHER_ASSERT(false && "SmallString overflow");
+                    AETHER_ASSERT_MSG(false, "SmallString overflow");
                     return;
                 } else {
                     return; // truncate: ignore

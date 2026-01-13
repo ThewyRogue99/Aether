@@ -121,7 +121,7 @@ namespace Aether::Engine {
     }
 
     void String::growTo(uint32_t newCap) {
-        AETHER_ASSERT(m_alloc && "Allocator not set");
+        AETHER_ASSERT_MSG(m_alloc, "Allocator not set");
         char* newData = static_cast<char*>(m_alloc->allocate(static_cast<std::size_t>(newCap) + 1));
         AETHER_ASSERT(newData);
 

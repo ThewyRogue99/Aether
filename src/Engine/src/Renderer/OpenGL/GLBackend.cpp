@@ -57,8 +57,7 @@ namespace Aether::Renderer {
             glGetShaderInfoLog(sh, len, &len, log.data());
             glDeleteShader(sh);
 
-            // TODO: Fix assertions
-            //AETHER_ASSERT(false, "Shader compile failed (%s)\n%s", debugName ? debugName : "unnamed", log.c_str());
+            AETHER_ASSERT_MSG(false, "Shader compile failed (%s)\n%s", debugName ? debugName : "unnamed", log.c_str());
         }
         return sh;
     }
@@ -79,8 +78,7 @@ namespace Aether::Renderer {
             glGetProgramInfoLog(prog, len, &len, log.data());
 
             glDeleteProgram(prog);
-            // TODO: Fix assertions
-            //AETHER_ASSERT(false, "Program link failed (%s)\n%s", (debugName ? debugName : "unnamed"), log.c_str());
+            AETHER_ASSERT_MSG(false, "Program link failed (%s)\n%s", (debugName ? debugName : "unnamed"), log.c_str());
         }
 
         glDetachShader(prog, vs);
@@ -98,8 +96,8 @@ namespace Aether::Renderer {
             m_Width   = info.width;
             m_Height  = info.height;
 
-            AETHER_ASSERT(m_Context, "GLBackend: GraphicsContext is null");
-            AETHER_ASSERT(
+            AETHER_ASSERT_MSG(m_Context, "GLBackend: GraphicsContext is null");
+            AETHER_ASSERT_MSG(
                 m_Context->GetAPI() == Aether::Platform::GraphicsAPI::OpenGL,
                 "GLBackend: GraphicsContext is not OpenGL"
             );
@@ -107,7 +105,7 @@ namespace Aether::Renderer {
             m_Context->MakeCurrent();
 
             s_LoaderContext = m_Context;
-            AETHER_ASSERT(gladLoadGL(reinterpret_cast<GLADloadfunc>(GLGetProcAddress)), "Failed to initialize OpenGL via glad");
+            AETHER_ASSERT_MSG(gladLoadGL(reinterpret_cast<GLADloadfunc>(GLGetProcAddress)), "Failed to initialize OpenGL via glad");
             s_LoaderContext = nullptr;
 
             glViewport(0, 0, static_cast<GLsizei>(m_Width), static_cast<GLsizei>(m_Height));
@@ -119,12 +117,12 @@ namespace Aether::Renderer {
         }
 
         void BeginFrame() {
-            AETHER_ASSERT(!m_InFrame, "GLBackend::BeginFrame called twice");
+            AETHER_ASSERT_MSG(!m_InFrame, "GLBackend::BeginFrame called twice");
             m_InFrame = true;
         }
 
         void EndFrame() {
-            AETHER_ASSERT(m_InFrame, "GLBackend::EndFrame without BeginFrame");
+            AETHER_ASSERT_MSG(m_InFrame, "GLBackend::EndFrame without BeginFrame");
             m_InFrame = false;
         }
 
@@ -147,7 +145,7 @@ namespace Aether::Renderer {
         }
 
         void Present() {
-            AETHER_ASSERT(m_Context, "GLBackend::Present without context");
+            AETHER_ASSERT_MSG(m_Context, "GLBackend::Present without context");
             m_Context->SwapBuffers();
         }
 
