@@ -40,6 +40,8 @@ namespace Aether::Platform {
         void OnKey(int key, int action);
         void OnMouseMove(float x, float y);
         void OnMouseButton(int button, int action);
+        void OnWindowResize(int width, int height);
+        void OnFramebufferResize(int width, int height);
 
         [[nodiscard]] GLFWwindow* GetWindowHandle() const;
 

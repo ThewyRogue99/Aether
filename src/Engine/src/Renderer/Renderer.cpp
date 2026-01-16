@@ -92,6 +92,12 @@ namespace Aether::Renderer {
         });
     }
 
+    void Renderer::SetViewport(int width, int height) {
+        s_RenderThread.Enqueue([=](){
+            if (s_Backend) s_Backend->SetViewport(width, height);
+        });
+    }
+
     RenderAPI Renderer::GetAPI() {
         return s_Backend ? s_Backend->API() : RenderAPI::None;
     }
@@ -137,6 +143,53 @@ namespace Aether::Renderer {
     void Renderer::DestroyShader(const ShaderHandle& handle) {
         s_RenderThread.Enqueue([=] {
             s_Backend->DestroyShader(handle);
+        });
+    }
+
+    PipelineHandle Renderer::CreatePipeline(const PipelineDesc& desc) {
+        PipelineHandle handle;
+
+        s_RenderThread.Enqueue([&]() {
+            handle = s_Backend->CreatePipeline(desc);
+        });
+
+        s_RenderThread.Flush();
+        return handle;
+    }
+
+    void Renderer::DestroyPipeline(const PipelineHandle& handle) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->DestroyPipeline(handle);
+        });
+    }
+
+    void Renderer::BindPipeline(const PipelineHandle& handle) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->BindPipeline(handle);
+        });
+    }
+
+    void Renderer::BindVertexBuffer(const BufferHandle& handle) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->BindVertexBuffer(handle);
+        });
+    }
+
+    void Renderer::BindIndexBuffer(const BufferHandle& handle) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->BindIndexBuffer(handle);
+        });
+    }
+
+    void Renderer::Draw(uint32_t vertexCount, uint32_t firstVertex) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->Draw(vertexCount, firstVertex);
+        });
+    }
+
+    void Renderer::DrawIndexed(uint32_t indexCount, uint32_t firstIndex) {
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->DrawIndexed(indexCount, firstIndex);
         });
     }
 }

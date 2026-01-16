@@ -15,19 +15,35 @@ namespace Aether::Engine {
         AETHER_EVENT_CLASS_CATEGORY(EventCategory::Window | EventCategory::Application)
     };
 
-    class WindowResizeEvent final : public Event {
+    class WindowResizeEvent : public Event {
     public:
-        WindowResizeEvent(uint32_t width, uint32_t height)
+        WindowResizeEvent(int width, int height)
             : m_Width(width), m_Height(height) { }
 
-        uint32_t GetWidth() const { return m_Width; }
-        uint32_t GetHeight() const { return m_Height; }
+        [[nodiscard]] int GetWidth() const { return m_Width; }
+        [[nodiscard]] int GetHeight() const { return m_Height; }
 
         AETHER_EVENT_CLASS_TYPE(WindowResize)
         AETHER_EVENT_CLASS_CATEGORY(EventCategory::Window)
 
     private:
-        uint32_t m_Width;
-        uint32_t m_Height;
+        int m_Width;
+        int m_Height;
+    };
+
+    class FramebufferResizeEvent : public Event {
+    public:
+        FramebufferResizeEvent(int width, int height)
+            : m_Width(width), m_Height(height) { }
+
+        [[nodiscard]] int GetWidth() const { return m_Width; }
+        [[nodiscard]] int GetHeight() const { return m_Height; }
+
+        AETHER_EVENT_CLASS_TYPE(FramebufferResize)
+        AETHER_EVENT_CLASS_CATEGORY(EventCategory::Window | EventCategory::Application)
+
+    private:
+        int m_Width;
+        int m_Height;
     };
 }

@@ -8,6 +8,7 @@
 
 #include <Aether/Renderer/Buffer.h>
 #include <Aether/Renderer/Shader.h>
+#include <Aether/Renderer/Pipeline.h>
 #include <Aether/Renderer/RenderAPI.h>
 
 namespace Aether::Platform {
@@ -30,6 +31,8 @@ namespace Aether::Renderer {
         static void SetClearColor(float r, float g, float b, float a);
         static void Clear();
 
+        static void SetViewport(int width, int height);
+
         static RenderAPI GetAPI();
 
         static uint64_t GetFrameIndex();
@@ -40,5 +43,15 @@ namespace Aether::Renderer {
 
         static ShaderHandle CreateShader(const ShaderDesc& desc);
         static void DestroyShader(const ShaderHandle& handle);
+
+        static PipelineHandle CreatePipeline(const PipelineDesc& desc);
+        static void DestroyPipeline(const PipelineHandle& handle);
+
+        static void BindPipeline(const PipelineHandle& handle);
+        static void BindVertexBuffer(const BufferHandle& handle);
+        static void BindIndexBuffer(const BufferHandle& handle);
+
+        static void Draw(uint32_t vertexCount, uint32_t firstVertex);
+        static void DrawIndexed(uint32_t indexCount, uint32_t firstIndex);
     };
 }

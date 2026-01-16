@@ -41,6 +41,7 @@ namespace Aether::Engine {
 
         WindowClose,
         WindowResize,
+        FramebufferResize,
 
         KeyPressed,
         KeyReleased,

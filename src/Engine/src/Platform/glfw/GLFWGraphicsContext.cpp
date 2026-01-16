@@ -9,6 +9,8 @@
 namespace Aether::Platform {
     GLFWGraphicsContext::GLFWGraphicsContext(GLFWwindow* window, GraphicsAPI API) : m_window(window), m_API(API) { }
 
+    GLFWGraphicsContext::~GLFWGraphicsContext() = default;
+
     GraphicsAPI GLFWGraphicsContext::GetAPI() const {
         return m_API;
     }
@@ -19,6 +21,14 @@ namespace Aether::Platform {
 
     void GLFWGraphicsContext::SwapBuffers() {
         glfwSwapBuffers(m_window);
+    }
+
+    FramebufferSize GLFWGraphicsContext::GetFrameBufferSize() const {
+        FramebufferSize size;
+
+        glfwGetFramebufferSize(m_window, &size.Width, &size.Height);
+
+        return size;
     }
 
     void* GLFWGraphicsContext::GetProcAddress(const char* name) {

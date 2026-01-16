@@ -54,13 +54,6 @@ namespace Aether::Engine {
                     layer->OnUpdate(deltaTime);
 
                 s_Instance->OnUpdate(deltaTime);
-
-                Renderer::Renderer::BeginFrame();
-
-                Renderer::Renderer::SetClearColor(0.1f, 0.1f, 0.12f, 1.0f);
-                Renderer::Renderer::Clear();
-
-                Renderer::Renderer::EndFrame();
             }
         }
 
@@ -126,6 +119,11 @@ namespace Aether::Engine {
         dispatcher.Dispatch<WindowCloseEvent>([this](WindowCloseEvent&) {
             m_Impl->m_Running = false;
             return true;
+        });
+
+        dispatcher.Dispatch<FramebufferResizeEvent>([this](FramebufferResizeEvent& event) {
+            Renderer::Renderer::SetViewport(event.GetWidth(), event.GetHeight());
+            return false;
         });
 
         for (auto it = m_Impl->m_LayerStack.rbegin(); it != m_Impl->m_LayerStack.rend(); ++it) {

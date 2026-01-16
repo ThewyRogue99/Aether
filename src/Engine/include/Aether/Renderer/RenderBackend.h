@@ -6,6 +6,7 @@
 
 #include <Aether/Renderer/Buffer.h>
 #include <Aether/Renderer/Shader.h>
+#include <Aether/Renderer/Pipeline.h>
 #include <Aether/Renderer/RenderAPI.h>
 
 namespace Aether::Platform {
@@ -37,11 +38,23 @@ namespace Aether::Renderer {
 
         virtual void Present() = 0;
 
+        virtual void SetViewport(int width, int height) = 0;
+
         virtual BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData) = 0;
         virtual void DestroyBuffer(const BufferHandle& handle) = 0;
         virtual void UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void* data, uint32_t size) = 0;
 
         virtual ShaderHandle CreateShader(const ShaderDesc& desc) = 0;
         virtual void DestroyShader(const ShaderHandle& handle) = 0;
+
+        virtual PipelineHandle CreatePipeline(const PipelineDesc& desc) = 0;
+        virtual void DestroyPipeline(const PipelineHandle& handle) = 0;
+
+        virtual void BindPipeline(const PipelineHandle& handle) = 0;
+        virtual void BindVertexBuffer(const BufferHandle& handle) = 0;
+        virtual void BindIndexBuffer(const BufferHandle& handle) = 0;
+
+        virtual void Draw(uint32_t vertexCount, uint32_t firstVertex) = 0;
+        virtual void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) = 0;
     };
 }

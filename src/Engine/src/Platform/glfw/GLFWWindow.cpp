@@ -13,6 +13,7 @@
 #include <glfw/GLFWInput.h>
 
 #include "GLFWGraphicsContext.h"
+#include "Aether/Events/WindowEvent.h"
 
 namespace Aether::Platform {
     GLFWWindow::GLFWWindow(const WindowProps& props) {
@@ -117,6 +118,18 @@ namespace Aether::Platform {
 
             self->OnMouseButton(button, action);
         });
+
+        glfwSetWindowSizeCallback(GetWindowHandle(), [](GLFWwindow* window, int width, int height) {
+            auto* self = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+
+            self->OnWindowResize(width, height);
+        });
+
+        glfwSetFramebufferSizeCallback(GetWindowHandle(), [](GLFWwindow* window, int width, int height) {
+            auto* self = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+
+            self->OnFramebufferResize(width, height);
+        });
     }
 
     void GLFWWindow::OnKey(int key, int action) {
@@ -146,6 +159,18 @@ namespace Aether::Platform {
             } else if (action == GLFW_RELEASE) {
                 m_EventQueue->Push(std::make_unique<Engine::MouseButtonReleasedEvent>(mb));
             }
+        }
+    }
+
+    void GLFWWindow::OnWindowResize(int width, int height) {
+        if (m_EventQueue) {
+            m_EventQueue->Push(std::make_unique<Engine::WindowResizeEvent>(width, height));
+        }
+    }
+
+    void GLFWWindow::OnFramebufferResize(int width, int height) {
+        if (m_EventQueue) {
+            m_EventQueue->Push(std::make_unique<Engine::FramebufferResizeEvent>(width, height));
         }
     }
 

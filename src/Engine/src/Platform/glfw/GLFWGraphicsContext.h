@@ -11,15 +11,18 @@ extern "C" {
 }
 
 namespace Aether::Platform {
-    class GLFWGraphicsContext final : public GraphicsContext {
+    class GLFWGraphicsContext : public GraphicsContext {
     public:
         explicit GLFWGraphicsContext(GLFWwindow* window, GraphicsAPI API = GraphicsAPI::OpenGL);
+        ~GLFWGraphicsContext() override;
 
         [[nodiscard]] GraphicsAPI GetAPI() const override;
 
         void MakeCurrent() override;
 
         void SwapBuffers() override;
+
+        [[nodiscard]] FramebufferSize GetFrameBufferSize() const override;
 
         void* GetProcAddress(const char* name) override;
 

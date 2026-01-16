@@ -32,6 +32,8 @@ namespace Aether::Renderer {
 
         void Present() override;
 
+        void SetViewport(int width, int height) override;
+
         BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData) override;
         void DestroyBuffer(const BufferHandle& handle) override;
         void UpdateBuffer(const BufferHandle& handle, uint32_t offset, const void* data, uint32_t size) override;
@@ -40,6 +42,16 @@ namespace Aether::Renderer {
         void DestroyShader(const ShaderHandle& handle) override;
 
         [[nodiscard]] uint32_t GetShaderProgram(const ShaderHandle& handle) const;
+
+        PipelineHandle CreatePipeline(const PipelineDesc &desc) override;
+        void DestroyPipeline(const PipelineHandle &handle) override;
+
+        void BindPipeline(const PipelineHandle &handle) override;
+        void BindVertexBuffer(const BufferHandle &handle) override;
+        void BindIndexBuffer(const BufferHandle &handle) override;
+
+        void Draw(uint32_t vertexCount, uint32_t firstVertex) override;
+        void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) override;
 
     private:
         class Impl;

@@ -4,6 +4,7 @@
 
 #include "GLBackend.h"
 
+#include <vector>
 #include <string>
 #include <unordered_map>
 
@@ -12,6 +13,7 @@
 #include <Aether/Log/Log.h>
 #include <Aether/Core/Assert.h>
 #include <Aether/Platform/GraphicsContext.h>
+#include <Aether/Renderer/VertexLayout.h>
 
 namespace {
     Aether::Platform::GraphicsContext* s_LoaderContext = nullptr;
@@ -108,7 +110,9 @@ namespace Aether::Renderer {
             AETHER_ASSERT_MSG(gladLoadGL(reinterpret_cast<GLADloadfunc>(GLGetProcAddress)), "Failed to initialize OpenGL via glad");
             s_LoaderContext = nullptr;
 
-            glViewport(0, 0, static_cast<GLsizei>(m_Width), static_cast<GLsizei>(m_Height));
+            const auto framebuffer_size = m_Context->GetFrameBufferSize();
+
+            glViewport(0, 0, framebuffer_size.Width, framebuffer_size.Height);
             glEnable(GL_DEPTH_TEST);
         }
 
@@ -216,6 +220,129 @@ namespace Aether::Renderer {
             return it->second.program;
         }
 
+        PipelineHandle CreatePipeline(const PipelineDesc& desc) {
+            GLPipeline pipeline{};
+            pipeline.program  = GetShaderProgram(desc.shader);
+            pipeline.cull     = desc.cull;
+            pipeline.depth    = desc.depth;
+            pipeline.blending = desc.blending;
+
+            glGenVertexArrays(1, &pipeline.vao);
+            glBindVertexArray(pipeline.vao);
+
+            pipeline.stride = desc.layout.stride;
+            pipeline.attributes.assign(desc.layout.attributes, desc.layout.attributes + desc.layout.attributeCount);
+
+            glBindVertexArray(0);
+
+            uint32_t id = m_NextPipelineId++;
+            m_Pipelines.emplace(id, pipeline);
+
+            return PipelineHandle{ id };
+        }
+
+        void DestroyPipeline(const PipelineHandle& handle) {
+            const auto it = m_Pipelines.find(handle.id);
+            if (it == m_Pipelines.end()) return;
+
+            glDeleteVertexArrays(1, &it->second.vao);
+            m_Pipelines.erase(it);
+        }
+
+        void BindPipeline(const PipelineHandle& handle) {
+            const auto& pipe = m_Pipelines.at(handle.id);
+
+            glUseProgram(pipe.program);
+
+            if (pipe.depth == DepthTest::Disabled) {
+                glDisable(GL_DEPTH_TEST);
+            } else {
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LEQUAL);
+            }
+
+            if (pipe.cull == CullMode::None) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+                glCullFace(pipe.cull == CullMode::Back ? GL_BACK : GL_FRONT);
+            }
+
+            if (pipe.blending) {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            } else {
+                glDisable(GL_BLEND);
+            }
+
+            glBindVertexArray(pipe.vao);
+            m_BoundPipelineId = handle.id;
+            m_BoundVAO = pipe.vao;
+        }
+
+        void BindVertexBuffer(const BufferHandle& handle) {
+            AETHER_ASSERT_MSG(m_BoundPipelineId != 0, "BindVertexBuffer called before BindPipeline");
+
+            const auto& buf = m_Buffers.at(handle.id);
+            const auto& pipe = m_Pipelines.at(m_BoundPipelineId);
+
+            glBindVertexArray(pipe.vao);
+            m_BoundVAO = pipe.vao;
+
+            glBindBuffer(GL_ARRAY_BUFFER, buf.id);
+            m_BoundVBO = buf.id;
+
+            for (const auto& attr : pipe.attributes) {
+                glEnableVertexAttribArray(attr.location);
+
+                GLint componentCount = 0;
+                switch (attr.format) {
+                    case VertexFormat::Float:  componentCount = 1; break;
+                    case VertexFormat::Float2: componentCount = 2; break;
+                    case VertexFormat::Float3: componentCount = 3; break;
+                    case VertexFormat::Float4: componentCount = 4; break;
+                }
+
+                glVertexAttribPointer(
+                    attr.location,
+                    componentCount,
+                    GL_FLOAT,
+                    attr.normalized ? GL_TRUE : GL_FALSE,
+                    static_cast<GLsizei>(pipe.stride),
+                    reinterpret_cast<const void*>(static_cast<uintptr_t>(attr.offset))
+                );
+            }
+        }
+
+        void BindIndexBuffer(const BufferHandle& handle) {
+            AETHER_ASSERT_MSG(m_BoundPipelineId != 0, "BindIndexBuffer called before BindPipeline");
+
+            const auto& buf = m_Buffers.at(handle.id);
+            const auto& pipe = m_Pipelines.at(m_BoundPipelineId);
+
+            glBindVertexArray(pipe.vao);
+            m_BoundVAO = pipe.vao;
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf.id);
+            m_BoundIBO = buf.id;
+        }
+
+        void Draw(uint32_t vertexCount, uint32_t firstVertex) {
+            GLint buf = 0;
+            glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &buf);
+            AETHER_ASSERT_MSG(buf != 0, "Attrib 0 has no VBO bound (VAO captured buffer 0)");
+            glDrawArrays(GL_TRIANGLES, static_cast<GLint>(firstVertex), static_cast<GLint>(vertexCount));
+        }
+
+        void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) {
+            glDrawElements(
+                GL_TRIANGLES,
+                static_cast<GLint>(indexCount),
+                GL_UNSIGNED_INT,
+                reinterpret_cast<const void*>(firstIndex * sizeof(uint32_t))
+            );
+        }
+
     private:
         struct GLBuffer {
             GLuint id;
@@ -225,6 +352,18 @@ namespace Aether::Renderer {
 
         struct GLShaderProgram {
             GLuint program = 0;
+        };
+
+        struct GLPipeline {
+            GLuint program = 0;
+            GLuint vao = 0;
+
+            CullMode cull{};
+            DepthTest depth{};
+            bool blending{};
+
+            uint32_t stride = 0;
+            std::vector<VertexAttribute> attributes = { };
         };
 
     private:
@@ -241,6 +380,14 @@ namespace Aether::Renderer {
 
         std::unordered_map<uint32_t, GLShaderProgram> m_Programs;
         uint32_t m_NextShaderId = 1;
+
+        std::unordered_map<uint32_t, GLPipeline> m_Pipelines;
+        uint32_t m_NextPipelineId = 1;
+
+        uint32_t m_BoundPipelineId = 0;
+        uint32_t m_BoundVAO = 0;
+        uint32_t m_BoundVBO = 0;
+        uint32_t m_BoundIBO = 0;
     };
 
     GLBackend::GLBackend() : m_Impl(Engine::MakeScope<Impl>()) { }
@@ -279,6 +426,10 @@ namespace Aether::Renderer {
         m_Impl->Present();
     }
 
+    void GLBackend::SetViewport(int width, int height) {
+        glViewport(0, 0, width, height);
+    }
+
     BufferHandle GLBackend::CreateBuffer(const BufferDesc& desc, const void* initialData) {
         return m_Impl->CreateBuffer(desc, initialData);
     }
@@ -301,5 +452,33 @@ namespace Aether::Renderer {
 
     uint32_t GLBackend::GetShaderProgram(const ShaderHandle& handle) const {
         return m_Impl->GetShaderProgram(handle);
+    }
+
+    PipelineHandle GLBackend::CreatePipeline(const PipelineDesc& desc) {
+        return m_Impl->CreatePipeline(desc);
+    }
+
+    void GLBackend::DestroyPipeline(const PipelineHandle& handle) {
+        m_Impl->DestroyPipeline(handle);
+    }
+
+    void GLBackend::BindPipeline(const PipelineHandle& handle) {
+        m_Impl->BindPipeline(handle);
+    }
+
+    void GLBackend::BindVertexBuffer(const BufferHandle& handle) {
+        m_Impl->BindVertexBuffer(handle);
+    }
+
+    void GLBackend::BindIndexBuffer(const BufferHandle& handle) {
+        m_Impl->BindIndexBuffer(handle);
+    }
+
+    void GLBackend::Draw(uint32_t vertexCount, uint32_t firstVertex) {
+        m_Impl->Draw(vertexCount, firstVertex);
+    }
+
+    void GLBackend::DrawIndexed(uint32_t indexCount, uint32_t firstIndex) {
+        m_Impl->DrawIndexed(indexCount, firstIndex);
     }
 }
