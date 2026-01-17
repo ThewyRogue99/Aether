@@ -42,8 +42,7 @@ namespace Aether::Renderer {
             : GL_STATIC_DRAW;
     }
 
-    static GLuint CompileStage(GLenum stage, const char* src, const char* debugName)
-    {
+    static GLuint CompileStage(GLenum stage, const char* src, const char* debugName) {
         AETHER_ASSERT(src && src[0] != '\0');
 
         const GLuint sh = glCreateShader(stage);
@@ -64,8 +63,7 @@ namespace Aether::Renderer {
         return sh;
     }
 
-    static GLuint LinkProgram(GLuint vs, GLuint fs, const char* debugName)
-    {
+    static GLuint LinkProgram(GLuint vs, GLuint fs, const char* debugName) {
         const GLuint prog = glCreateProgram();
         glAttachShader(prog, vs);
         glAttachShader(prog, fs);

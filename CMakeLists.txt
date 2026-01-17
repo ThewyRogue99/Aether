@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 4.0)
-project(Aether)
+cmake_minimum_required(VERSION 3.16)
+project(Aether LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 

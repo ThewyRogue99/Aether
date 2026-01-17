@@ -12,6 +12,7 @@ set(ENGINE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(Core)
 add_subdirectory(Platform)
 add_subdirectory(Log)
+add_subdirectory(Math)
 add_subdirectory(Input)
 add_subdirectory(Events)
 add_subdirectory(Renderer)
@@ -29,6 +30,7 @@ target_link_libraries(aether_engine
         Aether::Engine::Log
         Aether::Engine::Platform
         Aether::Engine::Input
+        Aether::Engine::Math
         Aether::Engine::Events
         Aether::Engine::Renderer
 )
