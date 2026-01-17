@@ -28,4 +28,20 @@ namespace Aether::Renderer {
         BufferAccess access;
         uint32_t size;
     };
+
+    struct UniformBufferHandle {
+        uint32_t id = 0;
+        explicit operator bool() const { return id != 0; }
+    };
+
+    enum class UniformUsage : uint8_t {
+        PerFrame,
+        PerObject
+    };
+
+    struct UniformBufferDesc {
+        uint32_t size;
+        UniformUsage usage;
+        const char* debugName = nullptr;
+    };
 }

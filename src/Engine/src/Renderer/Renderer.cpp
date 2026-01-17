@@ -11,9 +11,16 @@
 #include <Aether/Platform/Window.h>
 #include <Aether/Core/Memory/Pointer.h>
 
+#include <glm/mat4x4.hpp>
+
+#include "Math/Interop.h"
 #include "OpenGL/GLBackend.h"
 
 namespace Aether::Renderer {
+    struct CameraData {
+        glm::mat4 ViewProjection;
+    } s_CameraData;
+    static UniformBufferHandle s_CameraUBO;
     static RenderThread s_RenderThread;
     static Engine::Scope<RenderBackend> s_Backend;
     static uint64_t s_FrameIndex = 0;
@@ -34,6 +41,11 @@ namespace Aether::Renderer {
 
         const auto context = s_Window->GetGraphicsContext();
 
+        UniformBufferDesc desc{};
+        desc.size = sizeof(CameraData);
+        desc.usage = UniformUsage::PerFrame;
+        desc.debugName = "CameraUBO";
+
         s_RenderThread.Start();
 
         s_RenderThread.Enqueue([=](){
@@ -42,8 +54,10 @@ namespace Aether::Renderer {
                 default: /* TODO */ break;
             }
 
-            if (s_Backend)
+            if (s_Backend) {
                 s_Backend->Init(MakeBackendInitInfo());
+                s_CameraUBO = s_Backend->CreateUniformBuffer(desc);
+            }
         });
 
         s_RenderThread.Flush();
@@ -65,7 +79,18 @@ namespace Aether::Renderer {
 
     void Renderer::BeginFrame() {
         s_RenderThread.Enqueue([](){
-            if (s_Backend) s_Backend->BeginFrame();
+            if (s_Backend) {
+                s_Backend->BeginFrame();
+
+                s_Backend->UpdateUniformBuffer(
+                    s_CameraUBO,
+                    &s_CameraData,
+                    sizeof(CameraData),
+                    0
+                );
+
+                s_Backend->BindUniformBuffer(s_CameraUBO, 0);
+            }
         });
     }
 
@@ -78,6 +103,10 @@ namespace Aether::Renderer {
         });
 
         ++s_FrameIndex;
+    }
+
+    void Renderer::SetCamera(const CameraDesc& camera) {
+        s_CameraData = { Math::ToGLM(camera.ViewProjection) };
     }
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {

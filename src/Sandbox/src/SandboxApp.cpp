@@ -23,11 +23,15 @@ Vertex vertices[3] = {
 };
 
 const char* vertexSrc = R"(#version 330 core
+
+layout(std140) uniform CameraUBO {
+    mat4 u_ViewProjection;
+};
+
 layout(location = 0) in vec3 a_Position;
 
-void main()
-{
-    gl_Position = vec4(a_Position, 1.0);
+void main() {
+    gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
 }
 )";
 
@@ -88,6 +92,8 @@ public:
             .blending  = false,
             .debugName = "TrianglePipeline"
         });
+
+        Renderer::Renderer::SetCamera({ Math::Matrix4f::Identity() });
     }
 
     void OnUpdate(float DeltaTime) override {

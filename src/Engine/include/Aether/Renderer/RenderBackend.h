@@ -54,6 +54,20 @@ namespace Aether::Renderer {
         virtual void BindVertexBuffer(const BufferHandle& handle) = 0;
         virtual void BindIndexBuffer(const BufferHandle& handle) = 0;
 
+        virtual UniformBufferHandle CreateUniformBuffer(const UniformBufferDesc& desc) = 0;
+        virtual void DestroyUniformBuffer(const UniformBufferHandle& handle) = 0;
+        virtual void UpdateUniformBuffer(
+            const UniformBufferHandle& handle,
+            const void* data,
+            uint32_t size,
+            uint32_t offset
+        ) = 0;
+
+        virtual void BindUniformBuffer(
+            const UniformBufferHandle& handle,
+            uint32_t bindingSlot
+        ) = 0;
+
         virtual void Draw(uint32_t vertexCount, uint32_t firstVertex) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) = 0;
     };

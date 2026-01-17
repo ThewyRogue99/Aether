@@ -247,6 +247,31 @@ namespace Aether::Renderer {
             m_Pipelines.erase(it);
         }
 
+        UniformBufferHandle CreateUniformBuffer(const UniformBufferDesc& desc) {
+            GLuint ubo = 0;
+            glGenBuffers(1, &ubo);
+            glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+            glBufferData(GL_UNIFORM_BUFFER, desc.size, nullptr, GL_DYNAMIC_DRAW);
+
+            const uint32_t handle = ++m_NextUniformBufferId;
+            m_UniformBuffers[handle] = { ubo, desc.size };
+            return { handle };
+        }
+
+        void DestroyUniformBuffer(const UniformBufferHandle& handle) {
+        }
+
+        void UpdateUniformBuffer(
+            const UniformBufferHandle& handle,
+            const void* data,
+            uint32_t size,
+            uint32_t offset
+        ) {
+            const auto& ubo = m_UniformBuffers[handle.id];
+            glBindBuffer(GL_UNIFORM_BUFFER, ubo.id);
+            glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+        }
+
         void BindPipeline(const PipelineHandle& handle) {
             const auto& pipe = m_Pipelines.at(handle.id);
 
@@ -325,6 +350,11 @@ namespace Aether::Renderer {
             m_BoundIBO = buf.id;
         }
 
+        void BindUniformBuffer(const UniformBufferHandle& handle, uint32_t bindingSlot) {
+            const auto& ubo = m_UniformBuffers[handle.id];
+            glBindBufferBase(GL_UNIFORM_BUFFER, bindingSlot, ubo.id);
+        }
+
         void Draw(uint32_t vertexCount, uint32_t firstVertex) {
             GLint buf = 0;
             glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &buf);
@@ -364,6 +394,12 @@ namespace Aether::Renderer {
             std::vector<VertexAttribute> attributes = { };
         };
 
+        struct GLUniformBuffer {
+            GLuint id = 0;
+            uint32_t size = 0;
+            UniformUsage usage;
+        };
+
     private:
         Platform::GraphicsContext* m_Context = nullptr;
 
@@ -386,6 +422,9 @@ namespace Aether::Renderer {
         uint32_t m_BoundVAO = 0;
         uint32_t m_BoundVBO = 0;
         uint32_t m_BoundIBO = 0;
+
+        std::unordered_map<uint32_t, GLUniformBuffer> m_UniformBuffers;
+        uint32_t m_NextUniformBufferId = 1;
     };
 
     GLBackend::GLBackend() : m_Impl(Engine::MakeScope<Impl>()) { }
@@ -460,6 +499,22 @@ namespace Aether::Renderer {
         m_Impl->DestroyPipeline(handle);
     }
 
+    UniformBufferHandle GLBackend::CreateUniformBuffer(const UniformBufferDesc& desc) {
+        return m_Impl->CreateUniformBuffer(desc);
+    }
+
+    void GLBackend::DestroyUniformBuffer(const UniformBufferHandle& handle) {
+    }
+
+    void GLBackend::UpdateUniformBuffer(
+        const UniformBufferHandle& handle,
+        const void *data,
+        uint32_t size,
+        uint32_t offset
+    ) {
+        return m_Impl->UpdateUniformBuffer(handle, data, size, offset);
+    }
+
     void GLBackend::BindPipeline(const PipelineHandle& handle) {
         m_Impl->BindPipeline(handle);
     }
@@ -470,6 +525,10 @@ namespace Aether::Renderer {
 
     void GLBackend::BindIndexBuffer(const BufferHandle& handle) {
         m_Impl->BindIndexBuffer(handle);
+    }
+
+    void GLBackend::BindUniformBuffer(const UniformBufferHandle& handle, uint32_t bindingSlot) {
+        m_Impl->BindUniformBuffer(handle, bindingSlot);
     }
 
     void GLBackend::Draw(uint32_t vertexCount, uint32_t firstVertex) {

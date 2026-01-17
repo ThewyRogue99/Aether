@@ -8,6 +8,8 @@
 #include <initializer_list>
 #include <cassert>
 
+#include <Aether/Math/Vector.h>
+
 namespace Aether::Math {
     template<typename T, size_t R, size_t C>
     struct Matrix {

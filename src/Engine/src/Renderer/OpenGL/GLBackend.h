@@ -43,12 +43,22 @@ namespace Aether::Renderer {
 
         [[nodiscard]] uint32_t GetShaderProgram(const ShaderHandle& handle) const;
 
-        PipelineHandle CreatePipeline(const PipelineDesc &desc) override;
-        void DestroyPipeline(const PipelineHandle &handle) override;
+        PipelineHandle CreatePipeline(const PipelineDesc& desc) override;
+        void DestroyPipeline(const PipelineHandle& handle) override;
+
+        UniformBufferHandle CreateUniformBuffer(const UniformBufferDesc &desc) override;
+        void DestroyUniformBuffer(const UniformBufferHandle& handle) override;
+        void UpdateUniformBuffer(
+            const UniformBufferHandle& handle,
+            const void* data,
+            uint32_t size,
+            uint32_t offset
+        ) override;
 
         void BindPipeline(const PipelineHandle &handle) override;
         void BindVertexBuffer(const BufferHandle &handle) override;
         void BindIndexBuffer(const BufferHandle &handle) override;
+        void BindUniformBuffer(const UniformBufferHandle& handle, uint32_t bindingSlot) override;
 
         void Draw(uint32_t vertexCount, uint32_t firstVertex) override;
         void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) override;

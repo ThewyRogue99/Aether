@@ -11,11 +11,17 @@
 #include <Aether/Renderer/Pipeline.h>
 #include <Aether/Renderer/RenderAPI.h>
 
+#include <Aether/Math/Matrix.h>
+
 namespace Aether::Platform {
     class Window;
 }
 
 namespace Aether::Renderer {
+    struct CameraDesc {
+        Math::Matrix4f ViewProjection;
+    };
+
     struct RendererInitInfo {
         Platform::Window* window = nullptr;
     };
@@ -27,6 +33,8 @@ namespace Aether::Renderer {
 
         static void BeginFrame();
         static void EndFrame();
+
+        static void SetCamera(const CameraDesc& camera);
 
         static void SetClearColor(float r, float g, float b, float a);
         static void Clear();
