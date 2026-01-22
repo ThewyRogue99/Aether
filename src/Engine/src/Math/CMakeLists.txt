@@ -1,4 +1,5 @@
 add_library(aether_engine_math STATIC
+    Math.cpp
     Interop.cpp
 )
 

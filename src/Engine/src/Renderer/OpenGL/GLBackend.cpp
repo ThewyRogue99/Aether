@@ -221,9 +221,23 @@ namespace Aether::Renderer {
         PipelineHandle CreatePipeline(const PipelineDesc& desc) {
             GLPipeline pipeline{};
             pipeline.program  = GetShaderProgram(desc.shader);
-            pipeline.cull     = desc.cull;
-            pipeline.depth    = desc.depth;
+            pipeline.cull = desc.cull;
+            pipeline.depth = desc.depth;
             pipeline.blending = desc.blending;
+
+            const GLuint prog = pipeline.program;
+
+            const GLuint cameraIndex = glGetUniformBlockIndex(prog, "CameraUBO");
+            if (cameraIndex != GL_INVALID_INDEX)
+                glUniformBlockBinding(pipeline.program, cameraIndex, 0);
+
+            const GLuint objectIndex = glGetUniformBlockIndex(prog, "ObjectUBO");
+            if (objectIndex != GL_INVALID_INDEX)
+                glUniformBlockBinding(pipeline.program, objectIndex, 1);
+
+            const GLuint matIndex = glGetUniformBlockIndex(prog, "MaterialUBO");
+            if (matIndex != GL_INVALID_INDEX)
+                glUniformBlockBinding(pipeline.program, matIndex, 2);
 
             glGenVertexArrays(1, &pipeline.vao);
             glBindVertexArray(pipeline.vao);

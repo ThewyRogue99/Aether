@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include <Aether/Renderer/Buffer.h>
 #include <Aether/Renderer/Shader.h>
 #include <Aether/Renderer/Pipeline.h>
 #include <Aether/Renderer/RenderAPI.h>
+#include <Aether/Renderer/Mesh.h>
+#include <Aether/Renderer/Material.h>
 
 #include <Aether/Math/Matrix.h>
 
@@ -18,6 +18,10 @@ namespace Aether::Platform {
 }
 
 namespace Aether::Renderer {
+    struct ObjectDesc {
+        Math::Matrix4f Model;
+    };
+
     struct CameraDesc {
         Math::Matrix4f ViewProjection;
     };
@@ -55,11 +59,15 @@ namespace Aether::Renderer {
         static PipelineHandle CreatePipeline(const PipelineDesc& desc);
         static void DestroyPipeline(const PipelineHandle& handle);
 
+        static Material CreateMaterial(const PipelineHandle& pipeline, const char* debugName = nullptr);
+        static void DestroyMaterial(Material& material);
+
+        static void SetMaterialColor(Material& material, const Math::Vector4f& color);
+
         static void BindPipeline(const PipelineHandle& handle);
         static void BindVertexBuffer(const BufferHandle& handle);
         static void BindIndexBuffer(const BufferHandle& handle);
 
-        static void Draw(uint32_t vertexCount, uint32_t firstVertex);
-        static void DrawIndexed(uint32_t indexCount, uint32_t firstIndex);
+        static void DrawMesh(const Mesh& mesh, const Material& material, const Math::Matrix4f& model);
     };
 }

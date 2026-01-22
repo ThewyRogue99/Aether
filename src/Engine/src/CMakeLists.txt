@@ -16,6 +16,7 @@ add_subdirectory(Math)
 add_subdirectory(Input)
 add_subdirectory(Events)
 add_subdirectory(Renderer)
+add_subdirectory(Scene)
 
 target_include_directories(aether_engine PUBLIC
     ${ENGINE_INCLUDE_DIR}
@@ -33,6 +34,7 @@ target_link_libraries(aether_engine
         Aether::Engine::Math
         Aether::Engine::Events
         Aether::Engine::Renderer
+        Aether::Engine::Scene
 )
 
 add_library(Aether::Engine ALIAS aether_engine)

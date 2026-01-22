@@ -9,8 +9,10 @@
 #include <Aether/Core/Application.h>
 
 #include "SandboxLayer.h"
+#include "Aether/Math/Math.h"
 #include "Aether/Renderer/Buffer.h"
 #include "Aether/Renderer/Renderer.h"
+#include "Aether/Scene/Camera.h"
 
 struct Vertex {
     float position[3];
@@ -28,19 +30,27 @@ layout(std140) uniform CameraUBO {
     mat4 u_ViewProjection;
 };
 
+layout(std140) uniform ObjectUBO {
+    mat4 u_Model;
+};
+
 layout(location = 0) in vec3 a_Position;
 
 void main() {
-    gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+    gl_Position = u_ViewProjection * u_Model * vec4(a_Position, 1.0);
 }
 )";
 
 const char* fragmentSrc = R"(#version 330 core
-out vec4 o_Color;
 
-void main()
-{
-    o_Color = vec4(1.0, 0.0, 0.0, 1.0); // red
+layout(std140) uniform MaterialUBO {
+    vec4 u_BaseColor;
+};
+
+out vec4 FragColor;
+
+void main() {
+    FragColor = u_BaseColor;
 }
 )";
 
@@ -59,13 +69,13 @@ public:
 
         PushLayer(Aether::Engine::MakeScope<SandboxLayer>());
 
-        m_VertexBuffer = Renderer::Renderer::CreateBuffer({
+        const auto vertexBuffer = Renderer::Renderer::CreateBuffer({
             .usage  = Renderer::BufferUsage::Vertex,
             .access = Renderer::BufferAccess::Static,
             .size   = sizeof(vertices)
         }, vertices);
 
-        Renderer::ShaderHandle shader = Renderer::Renderer::CreateShader({
+        const auto shader = Renderer::Renderer::CreateShader({
             .debugName      = "TriangleShader",
             .vertexSource   = vertexSrc,
             .fragmentSource = fragmentSrc
@@ -84,7 +94,7 @@ public:
             .stride         = sizeof(Vertex)
         };
 
-        m_Pipeline = Renderer::Renderer::CreatePipeline({
+        const auto pipeline = Renderer::Renderer::CreatePipeline({
             .shader    = shader,
             .layout    = layout,
             .cull      = Renderer::CullMode::None,
@@ -93,7 +103,25 @@ public:
             .debugName = "TrianglePipeline"
         });
 
-        Renderer::Renderer::SetCamera({ Math::Matrix4f::Identity() });
+
+        Engine::Camera camera;
+        camera.SetPerspective(
+            Math::Radians(60.f),
+            16.f / 9.f,
+            0.1f,
+            100.f
+        );
+
+        Renderer::Renderer::SetCamera({ camera.GetViewProjection() });
+
+        m_RedMaterial = Renderer::Renderer::CreateMaterial(pipeline, "RedMat");
+        m_GreenMaterial = Renderer::Renderer::CreateMaterial(pipeline, "GreenMat");
+
+        Renderer::Renderer::SetMaterialColor(m_RedMaterial,   {1,0,0,1});
+        Renderer::Renderer::SetMaterialColor(m_GreenMaterial, {0,1,0,1});
+
+        m_Triangle.VertexBuffer = vertexBuffer;
+        m_Triangle.VertexCount = 3;
     }
 
     void OnUpdate(float DeltaTime) override {
@@ -102,9 +130,9 @@ public:
         Renderer::Renderer::SetClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         Renderer::Renderer::Clear();
 
-        Renderer::Renderer::BindPipeline(m_Pipeline);
-        Renderer::Renderer::BindVertexBuffer(m_VertexBuffer);
-        Renderer::Renderer::Draw(3, 0);
+        Renderer::Renderer::DrawMesh(m_Triangle, m_RedMaterial, Math::Translate(Math::Matrix4f::Identity(), { -1.f, 0, 0 }));
+
+        Renderer::Renderer::DrawMesh(m_Triangle, m_GreenMaterial, Math::Translate(Math::Matrix4f::Identity(), { 0.5f, 0, 0 }));
 
         Renderer::Renderer::EndFrame();
     }
@@ -112,8 +140,9 @@ public:
 private:
     std::unique_ptr<Log::Sink> m_LogSink;
 
-    Renderer::PipelineHandle m_Pipeline;
-    Renderer::BufferHandle m_VertexBuffer;
+    Renderer::Mesh m_Triangle{};
+    Renderer::Material m_RedMaterial{};
+    Renderer::Material m_GreenMaterial{};
 };
 
 namespace Aether::Engine {

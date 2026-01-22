@@ -20,7 +20,9 @@ namespace Aether::Renderer {
     struct CameraData {
         glm::mat4 ViewProjection;
     } s_CameraData;
+
     static UniformBufferHandle s_CameraUBO;
+    static UniformBufferHandle s_ObjectUBO;
     static RenderThread s_RenderThread;
     static Engine::Scope<RenderBackend> s_Backend;
     static uint64_t s_FrameIndex = 0;
@@ -46,6 +48,11 @@ namespace Aether::Renderer {
         desc.usage = UniformUsage::PerFrame;
         desc.debugName = "CameraUBO";
 
+        UniformBufferDesc objDesc{};
+        objDesc.size = sizeof(glm::mat4);
+        objDesc.usage = UniformUsage::PerObject;
+        objDesc.debugName = "ObjectUBO";
+
         s_RenderThread.Start();
 
         s_RenderThread.Enqueue([=](){
@@ -56,7 +63,9 @@ namespace Aether::Renderer {
 
             if (s_Backend) {
                 s_Backend->Init(MakeBackendInitInfo());
+
                 s_CameraUBO = s_Backend->CreateUniformBuffer(desc);
+                s_ObjectUBO = s_Backend->CreateUniformBuffer(objDesc);
             }
         });
 
@@ -192,6 +201,43 @@ namespace Aether::Renderer {
         });
     }
 
+    Material Renderer::CreateMaterial(const PipelineHandle& pipeline, const char* debugName) {
+        Material mat{};
+        mat.Pipeline = pipeline;
+        mat.Data.BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+        UniformBufferDesc desc{};
+        desc.size = sizeof(MaterialData);
+        desc.usage = UniformUsage::PerObject;
+        desc.debugName = debugName ? debugName : "MaterialUBO";
+
+        s_RenderThread.Enqueue([&]() {
+            mat.UBO = s_Backend->CreateUniformBuffer(desc);
+            s_Backend->UpdateUniformBuffer(mat.UBO, &mat.Data, sizeof(MaterialData), 0);
+        });
+
+        s_RenderThread.Flush();
+        return mat;
+    }
+
+    void Renderer::DestroyMaterial(Material& material) {
+        if (!material.UBO) return;
+
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->DestroyUniformBuffer(material.UBO);
+        });
+
+        material.UBO = {};
+    }
+
+    void Renderer::SetMaterialColor(Material& material, const Math::Vector4f& color) {
+        material.Data.BaseColor = color;
+
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->UpdateUniformBuffer(material.UBO, &material.Data, sizeof(MaterialData), 0);
+        });
+    }
+
     void Renderer::BindPipeline(const PipelineHandle& handle) {
         s_RenderThread.Enqueue([=]() {
             s_Backend->BindPipeline(handle);
@@ -210,15 +256,26 @@ namespace Aether::Renderer {
         });
     }
 
-    void Renderer::Draw(uint32_t vertexCount, uint32_t firstVertex) {
-        s_RenderThread.Enqueue([=]() {
-            s_Backend->Draw(vertexCount, firstVertex);
-        });
-    }
+    void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const Math::Matrix4f& model) {
+        glm::mat4 modelGLM = Math::ToGLM(model);
 
-    void Renderer::DrawIndexed(uint32_t indexCount, uint32_t firstIndex) {
         s_RenderThread.Enqueue([=]() {
-            s_Backend->DrawIndexed(indexCount, firstIndex);
+            if (!s_Backend) return;
+
+            s_Backend->BindPipeline(material.Pipeline);
+
+            s_Backend->UpdateUniformBuffer(s_ObjectUBO, &modelGLM, sizeof(glm::mat4), 0);
+            s_Backend->BindUniformBuffer(s_ObjectUBO, 1);
+            s_Backend->BindUniformBuffer(material.UBO, 2);
+
+            s_Backend->BindVertexBuffer(mesh.VertexBuffer);
+
+            if (mesh.IsIndexed()) {
+                s_Backend->BindIndexBuffer(mesh.IndexBuffer);
+                s_Backend->DrawIndexed(mesh.IndexCount, 0);
+            } else {
+                s_Backend->Draw(mesh.VertexCount, 0);
+            }
         });
     }
 }
