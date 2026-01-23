@@ -8,6 +8,8 @@
 #include <Aether/Renderer/Shader.h>
 #include <Aether/Renderer/Pipeline.h>
 #include <Aether/Renderer/RenderAPI.h>
+#include <Aether/Renderer/Texture.h>
+#include <Aether/Renderer/Sampler.h>
 
 namespace Aether::Platform {
     class GraphicsContext;
@@ -67,6 +69,15 @@ namespace Aether::Renderer {
             const UniformBufferHandle& handle,
             uint32_t bindingSlot
         ) = 0;
+
+        virtual TextureHandle CreateTexture2D(const TextureDesc& desc) = 0;
+        virtual void DestroyTexture(const TextureHandle& texture) = 0;
+
+        virtual SamplerHandle CreateSampler(const SamplerDesc& desc) = 0;
+        virtual void DestroySampler(const SamplerHandle& sampler) = 0;
+
+        virtual void BindTexture2D(const TextureHandle& texture, uint32_t slot) = 0;
+        virtual void BindSampler(const SamplerHandle& sampler, uint32_t slot) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t firstVertex) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) = 0;

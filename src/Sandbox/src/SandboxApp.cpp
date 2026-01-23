@@ -16,15 +16,19 @@
 
 struct Vertex {
     float position[3];
+    float texCoord[2];
 };
 
 Vertex vertices[3] = {
-    {{  0.0f,  0.5f, 0.0f }},
-    {{  0.5f, -0.5f, 0.0f }},
-    {{ -0.5f, -0.5f, 0.0f }}
+    {{  0.0f,  0.5f, 0.0f }, { 0.5f, 1.0f }},
+    {{  0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f }},
+    {{ -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f }}
 };
 
 const char* vertexSrc = R"(#version 330 core
+
+layout(location = 0) in vec3 a_Position;
+layout(location = 1) in vec2 a_TexCoord;
 
 layout(std140) uniform CameraUBO {
     mat4 u_ViewProjection;
@@ -34,9 +38,10 @@ layout(std140) uniform ObjectUBO {
     mat4 u_Model;
 };
 
-layout(location = 0) in vec3 a_Position;
+out vec2 v_TexCoord;
 
 void main() {
+    v_TexCoord = a_TexCoord;
     gl_Position = u_ViewProjection * u_Model * vec4(a_Position, 1.0);
 }
 )";
@@ -47,10 +52,14 @@ layout(std140) uniform MaterialUBO {
     vec4 u_BaseColor;
 };
 
+uniform sampler2D u_Albedo;
+
+in vec2 v_TexCoord;
 out vec4 FragColor;
 
 void main() {
-    FragColor = u_BaseColor;
+    vec4 tex = texture(u_Albedo, v_TexCoord);
+    FragColor = tex * u_BaseColor;
 }
 )";
 
@@ -81,16 +90,24 @@ public:
             .fragmentSource = fragmentSrc
         });
 
-        Renderer::VertexAttribute attributes[] = {{
-            .location   = 0,
-            .format     = Renderer::VertexFormat::Float3,
-            .offset     = 0,
-            .normalized = false
-        }};
+        Renderer::VertexAttribute attributes[] = {
+            {
+                .location   = 0,
+                .format     = Renderer::VertexFormat::Float3,
+                .offset     = offsetof(Vertex, position),
+                .normalized = false
+            },
+            {
+                .location   = 1,
+                .format     = Renderer::VertexFormat::Float2,
+                .offset     = offsetof(Vertex, texCoord),
+                .normalized = false
+            }
+        };
 
         Renderer::VertexLayout layout{
             .attributes     = attributes,
-            .attributeCount = 1,
+            .attributeCount = 2,
             .stride         = sizeof(Vertex)
         };
 
@@ -114,11 +131,35 @@ public:
 
         Renderer::Renderer::SetCamera({ camera.GetViewProjection() });
 
-        m_RedMaterial = Renderer::Renderer::CreateMaterial(pipeline, "RedMat");
+        m_TexMaterial = Renderer::Renderer::CreateMaterial(pipeline, "TexMat");
         m_GreenMaterial = Renderer::Renderer::CreateMaterial(pipeline, "GreenMat");
 
-        Renderer::Renderer::SetMaterialColor(m_RedMaterial,   {1,0,0,1});
         Renderer::Renderer::SetMaterialColor(m_GreenMaterial, {0,1,0,1});
+
+        uint8_t pixels[] = {
+            // R, G, B, A
+            255, 255, 255, 255,
+            0,   0,   0,   255,
+            0,   0,   0,   255,
+            255, 255, 255, 255
+        };
+
+        Renderer::TextureDesc td{};
+        td.width = 2;
+        td.height = 2;
+        td.format = Renderer::TextureFormat::RGBA8;
+        td.data = pixels;
+
+        const auto tex = Renderer::Renderer::CreateTexture2D(td);
+
+        Renderer::SamplerDesc sd{};
+        sd.min = Renderer::Filter::Nearest;
+        sd.mag = Renderer::Filter::Nearest;
+
+        const auto samp = Renderer::Renderer::CreateSampler(sd);
+
+        m_TexMaterial.Albedo = tex;
+        m_TexMaterial.Sampler = samp;
 
         m_Triangle.VertexBuffer = vertexBuffer;
         m_Triangle.VertexCount = 3;
@@ -130,9 +171,8 @@ public:
         Renderer::Renderer::SetClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         Renderer::Renderer::Clear();
 
-        Renderer::Renderer::DrawMesh(m_Triangle, m_RedMaterial, Math::Translate(Math::Matrix4f::Identity(), { -1.f, 0, 0 }));
-
-        Renderer::Renderer::DrawMesh(m_Triangle, m_GreenMaterial, Math::Translate(Math::Matrix4f::Identity(), { 0.5f, 0, 0 }));
+        Renderer::Renderer::DrawMesh(m_Triangle, m_TexMaterial, Math::Translate(Math::Matrix4f::Identity(), { -1.f, 0, 0 }));
+        Renderer::Renderer::DrawMesh(m_Triangle, m_GreenMaterial, Math::Translate(Math::Matrix4f::Identity(), { 1.f, 0, 0 }));
 
         Renderer::Renderer::EndFrame();
     }
@@ -141,7 +181,7 @@ private:
     std::unique_ptr<Log::Sink> m_LogSink;
 
     Renderer::Mesh m_Triangle{};
-    Renderer::Material m_RedMaterial{};
+    Renderer::Material m_TexMaterial{};
     Renderer::Material m_GreenMaterial{};
 };
 

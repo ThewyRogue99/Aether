@@ -46,7 +46,7 @@ namespace Aether::Renderer {
         PipelineHandle CreatePipeline(const PipelineDesc& desc) override;
         void DestroyPipeline(const PipelineHandle& handle) override;
 
-        UniformBufferHandle CreateUniformBuffer(const UniformBufferDesc &desc) override;
+        UniformBufferHandle CreateUniformBuffer(const UniformBufferDesc& desc) override;
         void DestroyUniformBuffer(const UniformBufferHandle& handle) override;
         void UpdateUniformBuffer(
             const UniformBufferHandle& handle,
@@ -55,9 +55,18 @@ namespace Aether::Renderer {
             uint32_t offset
         ) override;
 
-        void BindPipeline(const PipelineHandle &handle) override;
-        void BindVertexBuffer(const BufferHandle &handle) override;
-        void BindIndexBuffer(const BufferHandle &handle) override;
+        TextureHandle CreateTexture2D(const TextureDesc& desc) override;
+        void DestroyTexture(const TextureHandle& texture) override;
+
+        SamplerHandle CreateSampler(const SamplerDesc& desc) override;
+        void DestroySampler(const SamplerHandle& sampler) override;
+
+        void BindTexture2D(const TextureHandle& texture, uint32_t slot) override;
+        void BindSampler(const SamplerHandle& sampler, uint32_t slot) override;
+
+        void BindPipeline(const PipelineHandle& handle) override;
+        void BindVertexBuffer(const BufferHandle& handle) override;
+        void BindIndexBuffer(const BufferHandle& handle) override;
         void BindUniformBuffer(const UniformBufferHandle& handle, uint32_t bindingSlot) override;
 
         void Draw(uint32_t vertexCount, uint32_t firstVertex) override;

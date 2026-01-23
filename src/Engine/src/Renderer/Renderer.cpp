@@ -27,6 +27,9 @@ namespace Aether::Renderer {
     static Engine::Scope<RenderBackend> s_Backend;
     static uint64_t s_FrameIndex = 0;
 
+    static TextureHandle s_WhiteTexture;
+    static SamplerHandle s_DefaultSampler;
+
     static Platform::Window* s_Window = nullptr;
 
     static BackendInitInfo MakeBackendInitInfo() {
@@ -63,6 +66,22 @@ namespace Aether::Renderer {
 
             if (s_Backend) {
                 s_Backend->Init(MakeBackendInitInfo());
+
+                uint8_t white[4] = { 255, 255, 255, 255 };
+
+                TextureDesc td{};
+                td.width  = 1;
+                td.height = 1;
+                td.format = TextureFormat::RGBA8;
+                td.data   = white;
+
+                s_WhiteTexture = s_Backend->CreateTexture2D(td);
+
+                SamplerDesc sd{};
+                sd.min = Filter::Linear;
+                sd.mag = Filter::Linear;
+
+                s_DefaultSampler = s_Backend->CreateSampler(sd);
 
                 s_CameraUBO = s_Backend->CreateUniformBuffer(desc);
                 s_ObjectUBO = s_Backend->CreateUniformBuffer(objDesc);
@@ -204,16 +223,19 @@ namespace Aether::Renderer {
     Material Renderer::CreateMaterial(const PipelineHandle& pipeline, const char* debugName) {
         Material mat{};
         mat.Pipeline = pipeline;
-        mat.Data.BaseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        mat.Albedo = s_WhiteTexture;
+        mat.Sampler = s_DefaultSampler;
 
         UniformBufferDesc desc{};
-        desc.size = sizeof(MaterialData);
+        desc.size = sizeof(glm::vec4);
         desc.usage = UniformUsage::PerObject;
         desc.debugName = debugName ? debugName : "MaterialUBO";
 
         s_RenderThread.Enqueue([&]() {
+            constexpr glm::vec4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+
             mat.UBO = s_Backend->CreateUniformBuffer(desc);
-            s_Backend->UpdateUniformBuffer(mat.UBO, &mat.Data, sizeof(MaterialData), 0);
+            s_Backend->UpdateUniformBuffer(mat.UBO, &baseColor, sizeof(glm::vec4), 0);
         });
 
         s_RenderThread.Flush();
@@ -230,11 +252,49 @@ namespace Aether::Renderer {
         material.UBO = {};
     }
 
-    void Renderer::SetMaterialColor(Material& material, const Math::Vector4f& color) {
-        material.Data.BaseColor = color;
+    TextureHandle Renderer::CreateTexture2D(const TextureDesc& desc) {
+        TextureHandle out;
+
+        s_RenderThread.Enqueue([&]() {
+            out = s_Backend->CreateTexture2D(desc);
+        });
+
+        s_RenderThread.Flush();
+        return out;
+    }
+
+    void Renderer::DestroyTexture(TextureHandle texture) {
+        if (!texture) return;
 
         s_RenderThread.Enqueue([=]() {
-            s_Backend->UpdateUniformBuffer(material.UBO, &material.Data, sizeof(MaterialData), 0);
+            s_Backend->DestroyTexture(texture);
+        });
+    }
+
+    SamplerHandle Renderer::CreateSampler(const SamplerDesc& desc) {
+        SamplerHandle out;
+
+        s_RenderThread.Enqueue([&]() {
+            out = s_Backend->CreateSampler(desc);
+        });
+
+        s_RenderThread.Flush();
+        return out;
+    }
+
+    void Renderer::DestroySampler(const SamplerHandle& sampler) {
+        if (!sampler) return;
+
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->DestroySampler(sampler);
+        });
+    }
+
+    void Renderer::SetMaterialColor(Material& material, const Math::Vector4f& color) {
+        s_RenderThread.Enqueue([=]() {
+            const glm::vec4 colorData = Math::ToGLM(color);
+
+            s_Backend->UpdateUniformBuffer(material.UBO, &colorData, sizeof(glm::vec4), 0);
         });
     }
 
@@ -269,6 +329,9 @@ namespace Aether::Renderer {
             s_Backend->BindUniformBuffer(material.UBO, 2);
 
             s_Backend->BindVertexBuffer(mesh.VertexBuffer);
+
+            s_Backend->BindTexture2D(material.Albedo, 0);
+            s_Backend->BindSampler(material.Sampler, 0);
 
             if (mesh.IsIndexed()) {
                 s_Backend->BindIndexBuffer(mesh.IndexBuffer);

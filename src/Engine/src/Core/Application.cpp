@@ -143,6 +143,7 @@ namespace Aether::Engine {
 
     void Application::Shutdown() {
         Renderer::Renderer::Shutdown();
+        Platform::Platform::Shutdown();
 
         OnShutdown();
         // Add additional cleanup if necessary

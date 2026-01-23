@@ -42,6 +42,30 @@ namespace Aether::Renderer {
             : GL_STATIC_DRAW;
     }
 
+    static GLenum ToGLInternalFormat(TextureFormat f) {
+        switch (f) {
+            case TextureFormat::RGBA8: return GL_RGBA8;
+            case TextureFormat::RGB8:  return GL_RGB8;
+        }
+        return GL_RGBA8;
+    }
+
+    static GLenum ToGLFormat(TextureFormat f) {
+        switch (f) {
+            case TextureFormat::RGBA8: return GL_RGBA;
+            case TextureFormat::RGB8:  return GL_RGB;
+        }
+        return GL_RGBA;
+    }
+
+    static GLint ToGLFilter(Filter f) {
+        return (f == Filter::Nearest) ? GL_NEAREST : GL_LINEAR;
+    }
+
+    static GLint ToGLWrap(Wrap w) {
+        return (w == Wrap::Clamp) ? GL_CLAMP_TO_EDGE : GL_REPEAT;
+    }
+
     static GLuint CompileStage(GLenum stage, const char* src, const char* debugName) {
         AETHER_ASSERT(src && src[0] != '\0');
 
@@ -225,19 +249,33 @@ namespace Aether::Renderer {
             pipeline.depth = desc.depth;
             pipeline.blending = desc.blending;
 
-            const GLuint prog = pipeline.program;
+            // Temporarily bind textures + uniforms manually
+            // TODO: Use user-defined binding slots
+            {
+                const GLuint prog = pipeline.program;
 
-            const GLuint cameraIndex = glGetUniformBlockIndex(prog, "CameraUBO");
-            if (cameraIndex != GL_INVALID_INDEX)
-                glUniformBlockBinding(pipeline.program, cameraIndex, 0);
+                const GLuint cameraIndex = glGetUniformBlockIndex(prog, "CameraUBO");
+                if (cameraIndex != GL_INVALID_INDEX)
+                    glUniformBlockBinding(prog, cameraIndex, 0);
 
-            const GLuint objectIndex = glGetUniformBlockIndex(prog, "ObjectUBO");
-            if (objectIndex != GL_INVALID_INDEX)
-                glUniformBlockBinding(pipeline.program, objectIndex, 1);
+                const GLuint objectIndex = glGetUniformBlockIndex(prog, "ObjectUBO");
+                if (objectIndex != GL_INVALID_INDEX)
+                    glUniformBlockBinding(prog, objectIndex, 1);
 
-            const GLuint matIndex = glGetUniformBlockIndex(prog, "MaterialUBO");
-            if (matIndex != GL_INVALID_INDEX)
-                glUniformBlockBinding(pipeline.program, matIndex, 2);
+                const GLuint matIndex = glGetUniformBlockIndex(prog, "MaterialUBO");
+                if (matIndex != GL_INVALID_INDEX)
+                    glUniformBlockBinding(prog, matIndex, 2);
+
+                GLint loc = glGetUniformLocation(prog, "u_Albedo");
+                if (loc >= 0) {
+                    GLint prev = 0;
+                    glGetIntegerv(GL_CURRENT_PROGRAM, &prev);
+
+                    glUseProgram(prog);
+                    glUniform1i(loc, 0);
+                    glUseProgram(static_cast<GLuint>(prev));
+                }
+            }
 
             glGenVertexArrays(1, &pipeline.vao);
             glBindVertexArray(pipeline.vao);
@@ -284,6 +322,94 @@ namespace Aether::Renderer {
             const auto& ubo = m_UniformBuffers[handle.id];
             glBindBuffer(GL_UNIFORM_BUFFER, ubo.id);
             glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+        }
+
+        TextureHandle CreateTexture2D(const TextureDesc& desc) {
+            GLuint tex = 0;
+            glGenTextures(1, &tex);
+            glBindTexture(GL_TEXTURE_2D, tex);
+
+            const GLenum internalFmt = ToGLInternalFormat(desc.format);
+            const GLenum fmt = ToGLFormat(desc.format);
+
+            glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                static_cast<GLint>(internalFmt),
+                static_cast<GLsizei>(desc.width),
+                static_cast<GLsizei>(desc.height),
+                0,
+                fmt,
+                GL_UNSIGNED_BYTE,
+                desc.data
+            );
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+            //glGenerateMipmap(GL_TEXTURE_2D);
+
+            const uint32_t handle = ++m_NextTex;
+            m_Textures2D[handle] = { tex, desc.width, desc.height, internalFmt, fmt };
+            return { handle };
+        }
+
+        void DestroyTexture(const TextureHandle& texture) {
+            if (!texture) return;
+
+            const auto it = m_Textures2D.find(texture.id);
+            if (it == m_Textures2D.end()) return;
+
+            glDeleteTextures(1, &it->second.id);
+            m_Textures2D.erase(it);
+        }
+
+        SamplerHandle CreateSampler(const SamplerDesc& desc) {
+            GLuint s = 0;
+            glGenSamplers(1, &s);
+
+            glSamplerParameteri(s, GL_TEXTURE_MIN_FILTER, ToGLFilter(desc.min));
+            glSamplerParameteri(s, GL_TEXTURE_MAG_FILTER, ToGLFilter(desc.mag));
+            glSamplerParameteri(s, GL_TEXTURE_WRAP_S, ToGLWrap(desc.u));
+            glSamplerParameteri(s, GL_TEXTURE_WRAP_T, ToGLWrap(desc.v));
+
+            const uint32_t handle = ++m_NextSampler;
+            m_Samplers[handle] = { s };
+            return { handle };
+        }
+
+        void DestroySampler(const SamplerHandle& sampler) {
+            if (!sampler) return;
+
+            const auto it = m_Samplers.find(sampler.id);
+            if (it == m_Samplers.end()) return;
+
+            glDeleteSamplers(1, &it->second.id);
+            m_Samplers.erase(it);
+        }
+
+        void BindTexture2D(const TextureHandle& texture, uint32_t slot) {
+            glActiveTexture(GL_TEXTURE0 + slot);
+
+            if (!texture) {
+                glBindTexture(GL_TEXTURE_2D, 0);
+                return;
+            }
+
+            const auto& t = m_Textures2D[texture.id];
+            glBindTexture(GL_TEXTURE_2D, t.id);
+        }
+
+        void BindSampler(const SamplerHandle& sampler, uint32_t slot) {
+            if (!sampler) {
+                glBindSampler(slot, 0);
+                return;
+            }
+
+            const auto& s = m_Samplers[sampler.id];
+            glBindSampler(slot, s.id);
         }
 
         void BindPipeline(const PipelineHandle& handle) {
@@ -414,6 +540,16 @@ namespace Aether::Renderer {
             UniformUsage usage;
         };
 
+        struct GLTexture2D {
+            GLuint id = 0;
+            uint32_t w=0, h=0;
+            GLenum internalFmt=0, fmt=0;
+        };
+
+        struct GLSampler {
+            GLuint id = 0;
+        };
+
     private:
         Platform::GraphicsContext* m_Context = nullptr;
 
@@ -439,6 +575,12 @@ namespace Aether::Renderer {
 
         std::unordered_map<uint32_t, GLUniformBuffer> m_UniformBuffers;
         uint32_t m_NextUniformBufferId = 1;
+
+        std::unordered_map<uint32_t, GLTexture2D> m_Textures2D;
+        uint32_t m_NextTex = 0;
+
+        std::unordered_map<uint32_t, GLSampler> m_Samplers;
+        uint32_t m_NextSampler = 0;
     };
 
     GLBackend::GLBackend() : m_Impl(Engine::MakeScope<Impl>()) { }
@@ -527,6 +669,30 @@ namespace Aether::Renderer {
         uint32_t offset
     ) {
         return m_Impl->UpdateUniformBuffer(handle, data, size, offset);
+    }
+
+    TextureHandle GLBackend::CreateTexture2D(const TextureDesc& desc) {
+        return m_Impl->CreateTexture2D(desc);
+    }
+
+    void GLBackend::DestroyTexture(const TextureHandle& texture) {
+        m_Impl->DestroyTexture(texture);
+    }
+
+    SamplerHandle GLBackend::CreateSampler(const SamplerDesc& desc) {
+        return m_Impl->CreateSampler(desc);
+    }
+
+    void GLBackend::DestroySampler(const SamplerHandle& sampler) {
+        m_Impl->DestroySampler(sampler);
+    }
+
+    void GLBackend::BindTexture2D(const TextureHandle& texture, uint32_t slot) {
+        m_Impl->BindTexture2D(texture, slot);
+    }
+
+    void GLBackend::BindSampler(const SamplerHandle& sampler, uint32_t slot) {
+        m_Impl->BindSampler(sampler, slot);
     }
 
     void GLBackend::BindPipeline(const PipelineHandle& handle) {

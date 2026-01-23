@@ -10,6 +10,8 @@
 #include <Aether/Renderer/RenderAPI.h>
 #include <Aether/Renderer/Mesh.h>
 #include <Aether/Renderer/Material.h>
+#include <Aether/Renderer/Texture.h>
+#include <Aether/Renderer/Sampler.h>
 
 #include <Aether/Math/Matrix.h>
 
@@ -61,6 +63,12 @@ namespace Aether::Renderer {
 
         static Material CreateMaterial(const PipelineHandle& pipeline, const char* debugName = nullptr);
         static void DestroyMaterial(Material& material);
+
+        static TextureHandle CreateTexture2D(const TextureDesc& desc);
+        static void DestroyTexture(TextureHandle texture);
+
+        static SamplerHandle CreateSampler(const SamplerDesc& desc);
+        static void DestroySampler(const SamplerHandle& sampler);
 
         static void SetMaterialColor(Material& material, const Math::Vector4f& color);
 
