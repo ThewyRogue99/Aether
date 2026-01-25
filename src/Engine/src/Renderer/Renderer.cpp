@@ -116,8 +116,6 @@ namespace Aether::Renderer {
                     sizeof(CameraData),
                     0
                 );
-
-                s_Backend->BindUniformBuffer(s_CameraUBO, 0);
             }
         });
     }
@@ -211,6 +209,21 @@ namespace Aether::Renderer {
         });
 
         s_RenderThread.Flush();
+
+        PipelineUniformBufferSlots slots{};
+
+        for (const auto& layout : desc.layout.uniformBufferLayout) {
+            if (layout.Name == "Camera") {
+                slots.camera = layout.Binding;
+            } else if (layout.Name == "Object") {
+                slots.object = layout.Binding;
+            } else if (layout.Name == "Material") {
+                slots.material = layout.Binding;
+            }
+        }
+
+        handle.uniformBufferSlots = slots;
+
         return handle;
     }
 
@@ -324,9 +337,13 @@ namespace Aether::Renderer {
 
             s_Backend->BindPipeline(material.Pipeline);
 
+            const auto& uniformBufferSlots = material.Pipeline.uniformBufferSlots;
+
+            s_Backend->BindUniformBuffer(s_CameraUBO, uniformBufferSlots.camera);
+
             s_Backend->UpdateUniformBuffer(s_ObjectUBO, &modelGLM, sizeof(glm::mat4), 0);
-            s_Backend->BindUniformBuffer(s_ObjectUBO, 1);
-            s_Backend->BindUniformBuffer(material.UBO, 2);
+            s_Backend->BindUniformBuffer(s_ObjectUBO, uniformBufferSlots.object);
+            s_Backend->BindUniformBuffer(material.UBO, uniformBufferSlots.material);
 
             s_Backend->BindVertexBuffer(mesh.VertexBuffer);
 

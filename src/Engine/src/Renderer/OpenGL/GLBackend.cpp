@@ -249,22 +249,16 @@ namespace Aether::Renderer {
             pipeline.depth = desc.depth;
             pipeline.blending = desc.blending;
 
-            // Temporarily bind textures + uniforms manually
-            // TODO: Use user-defined binding slots
             {
                 const GLuint prog = pipeline.program;
 
-                const GLuint cameraIndex = glGetUniformBlockIndex(prog, "CameraUBO");
-                if (cameraIndex != GL_INVALID_INDEX)
-                    glUniformBlockBinding(prog, cameraIndex, 0);
+                for (const auto& binding : desc.layout.uniformBufferLayout) {
+                    const auto& name = binding.Name;
 
-                const GLuint objectIndex = glGetUniformBlockIndex(prog, "ObjectUBO");
-                if (objectIndex != GL_INVALID_INDEX)
-                    glUniformBlockBinding(prog, objectIndex, 1);
-
-                const GLuint matIndex = glGetUniformBlockIndex(prog, "MaterialUBO");
-                if (matIndex != GL_INVALID_INDEX)
-                    glUniformBlockBinding(prog, matIndex, 2);
+                    const GLuint blockIndex = glGetUniformBlockIndex(prog, name.c_str());
+                    if (blockIndex != GL_INVALID_INDEX)
+                        glUniformBlockBinding(prog, blockIndex, binding.Binding);
+                }
 
                 GLint loc = glGetUniformLocation(prog, "u_Albedo");
                 if (loc >= 0) {
@@ -280,8 +274,9 @@ namespace Aether::Renderer {
             glGenVertexArrays(1, &pipeline.vao);
             glBindVertexArray(pipeline.vao);
 
-            pipeline.stride = desc.layout.stride;
-            pipeline.attributes.assign(desc.layout.attributes, desc.layout.attributes + desc.layout.attributeCount);
+            const auto& vertexLayout = desc.layout.vertexLayout;
+            pipeline.stride = vertexLayout.stride;
+            pipeline.attributes.assign(vertexLayout.attributes, vertexLayout.attributes + vertexLayout.attributeCount);
 
             glBindVertexArray(0);
 
@@ -311,6 +306,12 @@ namespace Aether::Renderer {
         }
 
         void DestroyUniformBuffer(const UniformBufferHandle& handle) {
+            const auto it = m_UniformBuffers.find(handle.id);
+            if (it == m_UniformBuffers.end())
+                return;
+
+            glDeleteBuffers(1, &it->second.id);
+            m_UniformBuffers.erase(it);
         }
 
         void UpdateUniformBuffer(
@@ -660,6 +661,7 @@ namespace Aether::Renderer {
     }
 
     void GLBackend::DestroyUniformBuffer(const UniformBufferHandle& handle) {
+        m_Impl->DestroyUniformBuffer(handle);
     }
 
     void GLBackend::UpdateUniformBuffer(

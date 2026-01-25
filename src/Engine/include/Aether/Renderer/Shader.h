@@ -13,8 +13,9 @@ namespace Aether::Renderer {
     };
 
     enum class ShaderStage : uint8_t {
-        Vertex,
-        Fragment
+        Vertex = 1 << 0,
+        Fragment = 1 << 1,
+        Compute = 1 << 2
     };
 
     struct ShaderDesc {

@@ -30,11 +30,11 @@ const char* vertexSrc = R"(#version 330 core
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec2 a_TexCoord;
 
-layout(std140) uniform CameraUBO {
+layout(std140) uniform Camera {
     mat4 u_ViewProjection;
 };
 
-layout(std140) uniform ObjectUBO {
+layout(std140) uniform Object {
     mat4 u_Model;
 };
 
@@ -48,7 +48,7 @@ void main() {
 
 const char* fragmentSrc = R"(#version 330 core
 
-layout(std140) uniform MaterialUBO {
+layout(std140) uniform Material {
     vec4 u_BaseColor;
 };
 
@@ -105,21 +105,27 @@ public:
             }
         };
 
-        Renderer::VertexLayout layout{
+        Renderer::PipelineLayoutDesc layoutDesc;
+        layoutDesc.vertexLayout = {
             .attributes     = attributes,
             .attributeCount = 2,
             .stride         = sizeof(Vertex)
         };
 
+        layoutDesc.uniformBufferLayout = {
+            { "Camera", 0, Renderer::ShaderStage::Vertex, Renderer::UniformScope::Global },
+            { "Object", 1, Renderer::ShaderStage::Vertex, Renderer::UniformScope::Object },
+            { "Material", 2, Renderer::ShaderStage::Fragment, Renderer::UniformScope::Material }
+        };
+
         const auto pipeline = Renderer::Renderer::CreatePipeline({
             .shader    = shader,
-            .layout    = layout,
+            .layout    = layoutDesc,
             .cull      = Renderer::CullMode::None,
             .depth     = Renderer::DepthTest::Disabled,
             .blending  = false,
             .debugName = "TrianglePipeline"
         });
-
 
         Engine::Camera camera;
         camera.SetPerspective(
