@@ -14,9 +14,16 @@ namespace Aether::Engine {
     class AETHER_API Name {
     public:
         Name();
+        ~Name();
 
         explicit Name(StringView& sv);
         explicit Name(const char* cstr);
+
+        Name(const Name&) = delete;
+        Name& operator=(const Name&) = delete;
+
+        Name(Name&&) noexcept;
+        Name& operator=(Name&&) noexcept;
 
         [[nodiscard]] uint32_t id() const;
         explicit operator bool() const;
