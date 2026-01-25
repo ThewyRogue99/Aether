@@ -6,6 +6,7 @@
 
 #include "Core.h"
 #include "StringView.h"
+#include <cstring>
 
 namespace Aether::Engine {
     class BasicAllocator;
@@ -42,6 +43,10 @@ namespace Aether::Engine {
         void append(StringView sv);
 
         void push_back(char c);
+
+        bool operator==(const String& other) const;
+        bool operator!=(const String& other) const;
+        bool operator<(const String& other) const;
 
     private:
         void release();
