@@ -100,6 +100,28 @@ namespace Aether::Engine {
         m_data[m_size] = '\0';
     }
 
+    bool String::operator==(const String& other) const {
+        if (m_size != other.m_size)
+            return false;
+        if (m_size == 0)
+            return true;
+        return std::memcmp(m_data, other.m_data, m_size) == 0;
+    }
+
+    bool String::operator!=(const String& other) const {
+        return !(*this == other);
+    }
+
+    bool String::operator<(const String& other) const {
+        const uint32_t minSize = m_size < other.m_size ? m_size : other.m_size;
+        if (minSize > 0) {
+            int cmp = std::memcmp(m_data, other.m_data, minSize);
+            if (cmp != 0)
+                return cmp < 0;
+        }
+        return m_size < other.m_size;
+    }
+
     void String::release() {
         if (m_data && m_alloc) {
             m_alloc->deallocate(m_data);
