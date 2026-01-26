@@ -17,17 +17,22 @@
 #include "OpenGL/GLBackend.h"
 
 namespace Aether::Renderer {
+    constexpr uint32_t MaxDirectionalLights = 4;
+
     struct CameraData {
         glm::mat4 ViewProjection;
     } s_CameraData;
 
-    struct DirectionalLightData {
-        glm::vec3 Direction;
-        float _pad0;
-        glm::vec3 Color;
-        float _pad1;
-        float Intensity;
-    } s_DirectionalLightData;
+    struct DirectionalLightDesc {
+        glm::vec4 direction; // xyz = dir
+        glm::vec4 color;     // rgb = color, a = intensity
+    };
+
+    struct LightData {
+        DirectionalLightDesc lights[MaxDirectionalLights];
+        uint32_t lightCount;
+        glm::vec3 _pad;
+    } s_LightData;
 
     static UniformBufferHandle s_CameraUBO;
     static UniformBufferHandle s_ObjectUBO;
@@ -96,7 +101,7 @@ namespace Aether::Renderer {
                 s_ObjectUBO = s_Backend->CreateUniformBuffer(objDesc);
 
                 s_LightUBO = s_Backend->CreateUniformBuffer({
-                    sizeof(DirectionalLightData),
+                    sizeof(LightData),
                     UniformUsage::PerFrame,
                     "LightUBO"
                 });
@@ -134,12 +139,14 @@ namespace Aether::Renderer {
 
                 s_Backend->UpdateUniformBuffer(
                     s_LightUBO,
-                    &s_DirectionalLightData,
-                    sizeof(DirectionalLightData),
+                    &s_LightData,
+                    sizeof(LightData),
                     0
                 );
             }
         });
+
+        BeginLights();
     }
 
     void Renderer::EndFrame() {
@@ -151,14 +158,40 @@ namespace Aether::Renderer {
         });
 
         ++s_FrameIndex;
+
+        EndLights();
+    }
+
+    void Renderer::BeginLights() {
+        s_RenderThread.Enqueue([](){
+            if (s_Backend) {
+                s_Backend->UpdateUniformBuffer(
+                    s_LightUBO,
+                    &s_LightData,
+                    sizeof(LightData),
+                    0
+                );
+            }
+        });
+    }
+
+    void Renderer::EndLights() {
+        memset(s_LightData.lights, 0, sizeof(s_LightData.lights));
+        s_LightData.lightCount = 0;
     }
 
     void Renderer::SetCamera(const CameraDesc& camera) {
         s_CameraData = { Math::ToGLM(camera.ViewProjection) };
     }
 
-    void Renderer::SetDirectionalLight(const Math::Vector3f& direction, const Math::Vector3f& color, float intensity) {
-        s_DirectionalLightData = { Math::ToGLM(direction), 0.f, Math::ToGLM(color), 0.f, intensity };
+    void Renderer::SubmitDirectionalLight(const Math::Vector3f& direction, const Math::Vector3f& color, float intensity) {
+        AETHER_ASSERT_MSG(s_LightData.lightCount < MaxDirectionalLights, "Too many lights!");
+
+        s_LightData.lights[s_LightData.lightCount] = {
+            glm::vec4(Math::ToGLM(direction), 0.f),
+            glm::vec4(Math::ToGLM(color), intensity)
+        };
+        s_LightData.lightCount++;
     }
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {

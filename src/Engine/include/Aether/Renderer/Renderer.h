@@ -40,8 +40,11 @@ namespace Aether::Renderer {
         static void BeginFrame();
         static void EndFrame();
 
+        static void BeginLights();
+        static void EndLights();
+
         static void SetCamera(const CameraDesc& camera);
-        static void SetDirectionalLight(
+        static void SubmitDirectionalLight(
             const Math::Vector3f& direction,
             const Math::Vector3f& color,
             float intensity

@@ -59,12 +59,17 @@ layout(std140) uniform Material {
     vec4 u_BaseColor;
 };
 
+const int MaxLights = 4;
+
+struct DirectionalLight {
+    vec4 direction;
+    vec4 color;
+};
+
 layout(std140) uniform Light {
-    vec3 u_LightDir;
-    float _pad0;
-    vec3 u_LightColor;
-    float _pad1;
-    float u_Intensity;
+    DirectionalLight u_Lights[MaxLights];
+    int u_LightCount;
+    vec3 _pad;
 };
 
 uniform sampler2D u_Albedo;
@@ -76,10 +81,16 @@ out vec4 FragColor;
 
 void main() {
     vec3 N = normalize(v_Normal);
-    float ndotl = max(dot(N, -normalize(u_LightDir.xyz)), 0.0);
+
+    vec3 lighting = vec3(0.0);
+    for (int i = 0; i < u_LightCount; ++i) {
+        vec3 L = -normalize(u_Lights[i].direction.xyz);
+        float ndotl = max(dot(N, L), 0.0);
+        lighting += u_Lights[i].color.rgb * ndotl * u_Lights[i].color.a;
+    }
 
     vec4 tex = texture(u_Albedo, v_TexCoord);
-    vec3 lit = tex.rgb * u_BaseColor.rgb * u_LightColor * ndotl * u_Intensity;
+    vec3 lit = tex.rgb * u_BaseColor.rgb * lighting;
 
     FragColor = vec4(lit, tex.a * u_BaseColor.a);
 }
@@ -205,17 +216,43 @@ public:
 
         m_LightRotation += DeltaTime;
 
-        const float radius = 1.0f;
-        Math::Vector3f lightDir = {
-            std::cos(m_LightRotation) * radius,
+        // Light 1: rotating white light
+        Math::Vector3f lightDir1 = {
+            std::cos(m_LightRotation),
             -1.0f,
-            std::sin(m_LightRotation) * radius
+            std::sin(m_LightRotation)
         };
 
-        Renderer::Renderer::SetDirectionalLight(
-            lightDir,
-            { 1.0f, 1.0f, 1.0f },
-            1.0f
+        // Light 2: static red light from the left
+        Math::Vector3f lightDir2 = {
+            -1.0f,
+            -0.5f,
+            -0.5f
+        };
+
+        // Light 3: static blue light from the right
+        Math::Vector3f lightDir3 = {
+            1.0f,
+            -0.5f,
+            -0.5f
+        };
+
+        Renderer::Renderer::SubmitDirectionalLight(
+            lightDir1,
+            { 1.0f, 1.0f, 1.0f }, // white
+            0.8f
+        );
+
+        Renderer::Renderer::SubmitDirectionalLight(
+            lightDir2,
+            { 1.0f, 0.0f, 0.0f }, // red
+            0.6f
+        );
+
+        Renderer::Renderer::SubmitDirectionalLight(
+            lightDir3,
+            { 0.0f, 0.0f, 1.0f }, // blue
+            0.6f
         );
 
         Renderer::Renderer::SetClearColor(0.1f, 0.1f, 0.1f, 1.0f);
