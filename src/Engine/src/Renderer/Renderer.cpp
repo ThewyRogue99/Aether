@@ -21,8 +21,17 @@ namespace Aether::Renderer {
         glm::mat4 ViewProjection;
     } s_CameraData;
 
+    struct DirectionalLightData {
+        glm::vec3 Direction;
+        float _pad0;
+        glm::vec3 Color;
+        float _pad1;
+        float Intensity;
+    } s_DirectionalLightData;
+
     static UniformBufferHandle s_CameraUBO;
     static UniformBufferHandle s_ObjectUBO;
+    static UniformBufferHandle s_LightUBO;
     static RenderThread s_RenderThread;
     static Engine::Scope<RenderBackend> s_Backend;
     static uint64_t s_FrameIndex = 0;
@@ -85,6 +94,12 @@ namespace Aether::Renderer {
 
                 s_CameraUBO = s_Backend->CreateUniformBuffer(desc);
                 s_ObjectUBO = s_Backend->CreateUniformBuffer(objDesc);
+
+                s_LightUBO = s_Backend->CreateUniformBuffer({
+                    sizeof(DirectionalLightData),
+                    UniformUsage::PerFrame,
+                    "LightUBO"
+                });
             }
         });
 
@@ -116,6 +131,13 @@ namespace Aether::Renderer {
                     sizeof(CameraData),
                     0
                 );
+
+                s_Backend->UpdateUniformBuffer(
+                    s_LightUBO,
+                    &s_DirectionalLightData,
+                    sizeof(DirectionalLightData),
+                    0
+                );
             }
         });
     }
@@ -133,6 +155,10 @@ namespace Aether::Renderer {
 
     void Renderer::SetCamera(const CameraDesc& camera) {
         s_CameraData = { Math::ToGLM(camera.ViewProjection) };
+    }
+
+    void Renderer::SetDirectionalLight(const Math::Vector3f& direction, const Math::Vector3f& color, float intensity) {
+        s_DirectionalLightData = { Math::ToGLM(direction), 0.f, Math::ToGLM(color), 0.f, intensity };
     }
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {
@@ -217,6 +243,8 @@ namespace Aether::Renderer {
                 slots.camera = layout.Binding;
             } else if (layout.Name == "Object") {
                 slots.object = layout.Binding;
+            } else if (layout.Name == "Light") {
+                slots.light = layout.Binding;
             } else if (layout.Name == "Material") {
                 slots.material = layout.Binding;
             }
@@ -340,6 +368,7 @@ namespace Aether::Renderer {
             const auto& uniformBufferSlots = material.Pipeline.uniformBufferSlots;
 
             s_Backend->BindUniformBuffer(s_CameraUBO, uniformBufferSlots.camera);
+            s_Backend->BindUniformBuffer(s_LightUBO, uniformBufferSlots.light);
 
             s_Backend->UpdateUniformBuffer(s_ObjectUBO, &modelGLM, sizeof(glm::mat4), 0);
             s_Backend->BindUniformBuffer(s_ObjectUBO, uniformBufferSlots.object);

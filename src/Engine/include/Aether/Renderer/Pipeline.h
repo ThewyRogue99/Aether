@@ -15,6 +15,7 @@ namespace Aether::Renderer {
     struct PipelineUniformBufferSlots {
         uint32_t camera = 0;
         uint32_t object = 0;
+        uint32_t light = 0;
         uint32_t material = 0;
     };
 

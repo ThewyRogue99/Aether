@@ -41,6 +41,11 @@ namespace Aether::Renderer {
         static void EndFrame();
 
         static void SetCamera(const CameraDesc& camera);
+        static void SetDirectionalLight(
+            const Math::Vector3f& direction,
+            const Math::Vector3f& color,
+            float intensity
+        );
 
         static void SetClearColor(float r, float g, float b, float a);
         static void Clear();
