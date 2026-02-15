@@ -71,6 +71,9 @@ namespace Aether::ECS {
             return m_Entities[denseIndex].Value == entity.Value;
         }
 
+        size_t Size() const { return m_Dense.size(); }
+        const std::vector<Entity>& Entities() const { return m_Entities; }
+
     private:
         void EnsureSparseSize(const Entity& entity) {
             const uint32_t index = EntityIndex(entity);
