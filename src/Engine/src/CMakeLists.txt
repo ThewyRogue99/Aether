@@ -10,6 +10,7 @@ target_compile_options(aether_engine_build INTERFACE
 set(ENGINE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(Core)
+add_subdirectory(ECS)
 add_subdirectory(Platform)
 add_subdirectory(Log)
 add_subdirectory(Math)
@@ -28,6 +29,7 @@ target_link_libraries(aether_engine
         aether_engine_build
     PUBLIC
         Aether::Engine::Core
+        Aether::Engine::ECS
         Aether::Engine::Log
         Aether::Engine::Platform
         Aether::Engine::Input
