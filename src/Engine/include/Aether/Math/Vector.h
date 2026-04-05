@@ -93,6 +93,30 @@ namespace Aether::Math {
             return out;
         }
 
+        constexpr Vector& operator+=(const Vector& rhs) {
+            for (size_t i = 0; i < N; ++i)
+                this->data[i] += rhs[i];
+            return *this;
+        }
+
+        constexpr Vector& operator-=(const Vector& rhs) {
+            for (size_t i = 0; i < N; ++i)
+                this->data[i] -= rhs[i];
+            return *this;
+        }
+
+        constexpr Vector& operator*=(T scalar) {
+            for (size_t i = 0; i < N; ++i)
+                this->data[i] *= scalar;
+            return *this;
+        }
+
+        constexpr Vector& operator/=(T scalar) {
+            for (size_t i = 0; i < N; ++i)
+                this->data[i] /= scalar;
+            return *this;
+        }
+
         // Dot product
         constexpr T Dot(const Vector& rhs) const {
             T sum{};
