@@ -31,7 +31,7 @@ namespace Aether::ECS {
         void RemoveComponent(const Entity& entity) {
             AETHER_ASSERT_MSG(IsAlive(entity), "Invalid entity!");
 
-            return GetStorage<T>().Remove(entity);
+            GetStorage<T>().Remove(entity);
         }
 
         template<typename T>
@@ -128,7 +128,10 @@ namespace Aether::ECS {
                 const std::vector<Entity>* result = nullptr;
 
                 std::apply([&](auto*... s) {
-                    ((static_cast<const void*>(s) == m_Primary ? result = &s->Entities() : void()), ...);
+                    (([&]{
+                        if (static_cast<const void*>(s) == m_Primary)
+                            result = &s->Entities();
+                    }()), ...);
                 }, m_Storages);
 
                 return *result;
