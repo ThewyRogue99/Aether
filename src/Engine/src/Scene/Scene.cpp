@@ -4,6 +4,8 @@
 
 #include <Aether/Scene/Scene.h>
 
+#include <Aether/Systems/ISystem.h>
+
 namespace Aether::Scene {
     Scene::Scene() = default;
 
@@ -21,7 +23,9 @@ namespace Aether::Scene {
     }
 
     void Scene::OnUpdate(float DeltaTime) {
-        // Empty for now
+        for (const auto& system : m_Systems) {
+            system->OnUpdate(*this, DeltaTime);
+        }
     }
 
     ECS::Registry& Scene::GetRegistry() {

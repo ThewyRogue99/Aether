@@ -18,6 +18,7 @@ add_subdirectory(Input)
 add_subdirectory(Events)
 add_subdirectory(Renderer)
 add_subdirectory(Scene)
+add_subdirectory(Systems)
 
 target_include_directories(aether_engine PUBLIC
     ${ENGINE_INCLUDE_DIR}
