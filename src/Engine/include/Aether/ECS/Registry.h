@@ -18,13 +18,20 @@ namespace Aether::ECS {
 
         void DestroyEntity(const Entity& entity);
 
-        bool IsAlive(const Entity& entity) const;
+        [[nodiscard]] bool IsAlive(const Entity& entity) const;
 
         template<typename T>
         void AddComponent(const Entity& entity, const T& component) {
             AETHER_ASSERT_MSG(IsAlive(entity), "Invalid entity!");
 
             GetStorage<T>().Add(entity, component);
+        }
+
+        template<typename T>
+        void RemoveComponent(const Entity& entity) {
+            AETHER_ASSERT_MSG(IsAlive(entity), "Invalid entity!");
+
+            return GetStorage<T>().Remove(entity);
         }
 
         template<typename T>
@@ -98,9 +105,9 @@ namespace Aether::ECS {
                 return *std::get<ComponentStorage<T>*>(m_Storages);
             }
 
-            const void* PickPrimaryStorage() const {
+            [[nodiscard]] const void* PickPrimaryStorage() const {
                 const void* best = nullptr;
-                size_t bestSize = static_cast<size_t>(-1);
+                auto bestSize = static_cast<size_t>(-1);
 
                 std::apply([&](auto*... s) {
                     (([&]
@@ -117,7 +124,7 @@ namespace Aether::ECS {
                 return best;
             }
 
-            const std::vector<Entity>& PrimaryEntities() const {
+            [[nodiscard]] const std::vector<Entity>& PrimaryEntities() const {
                 const std::vector<Entity>* result = nullptr;
 
                 std::apply([&](auto*... s) {
@@ -127,7 +134,7 @@ namespace Aether::ECS {
                 return *result;
             }
 
-            bool MatchesAll(Entity e) const {
+            [[nodiscard]] bool MatchesAll(Entity e) const {
                 bool ok = true;
                 std::apply([&](auto*... s) {
                     ((ok = ok && s->Has(e)), ...);
