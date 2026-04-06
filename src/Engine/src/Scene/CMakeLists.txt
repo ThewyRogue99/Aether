@@ -1,5 +1,4 @@
 add_library(aether_engine_scene STATIC
-    Camera.cpp
     Scene.cpp
     Entity.cpp
 )

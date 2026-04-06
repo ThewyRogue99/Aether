@@ -54,7 +54,7 @@ namespace Aether::Math {
 
         for (int col = 0; col < 4; ++col) {
             for (int row = 0; row < 4; ++row) {
-                out[col][row] = m[col][row];
+                out[col][row] = m[row][col];
             }
         }
 
@@ -70,7 +70,7 @@ namespace Aether::Math {
 
         for (int col = 0; col < 4; ++col) {
             for (int row = 0; row < 4; ++row) {
-                out[col][row] = m[col][row];
+                out[row][col] = m[col][row];
             }
         }
 

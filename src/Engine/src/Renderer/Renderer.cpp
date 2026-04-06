@@ -17,26 +17,12 @@
 #include "OpenGL/GLBackend.h"
 
 namespace Aether::Renderer {
-    constexpr uint32_t MaxDirectionalLights = 4;
-
     struct CameraData {
         glm::mat4 ViewProjection;
     } s_CameraData;
 
-    struct DirectionalLightDesc {
-        glm::vec4 direction; // xyz = dir
-        glm::vec4 color;     // rgb = color, a = intensity
-    };
-
-    struct LightData {
-        DirectionalLightDesc lights[MaxDirectionalLights];
-        uint32_t lightCount;
-        glm::vec3 _pad;
-    } s_LightData;
-
     static UniformBufferHandle s_CameraUBO;
     static UniformBufferHandle s_ObjectUBO;
-    static UniformBufferHandle s_LightUBO;
     static RenderThread s_RenderThread;
     static Engine::Scope<RenderBackend> s_Backend;
     static uint64_t s_FrameIndex = 0;
@@ -99,12 +85,6 @@ namespace Aether::Renderer {
 
                 s_CameraUBO = s_Backend->CreateUniformBuffer(desc);
                 s_ObjectUBO = s_Backend->CreateUniformBuffer(objDesc);
-
-                s_LightUBO = s_Backend->CreateUniformBuffer({
-                    sizeof(LightData),
-                    UniformUsage::PerFrame,
-                    "LightUBO"
-                });
             }
         });
 
@@ -129,24 +109,8 @@ namespace Aether::Renderer {
         s_RenderThread.Enqueue([](){
             if (s_Backend) {
                 s_Backend->BeginFrame();
-
-                s_Backend->UpdateUniformBuffer(
-                    s_CameraUBO,
-                    &s_CameraData,
-                    sizeof(CameraData),
-                    0
-                );
-
-                s_Backend->UpdateUniformBuffer(
-                    s_LightUBO,
-                    &s_LightData,
-                    sizeof(LightData),
-                    0
-                );
             }
         });
-
-        BeginLights();
     }
 
     void Renderer::EndFrame() {
@@ -158,40 +122,21 @@ namespace Aether::Renderer {
         });
 
         ++s_FrameIndex;
-
-        EndLights();
-    }
-
-    void Renderer::BeginLights() {
-        s_RenderThread.Enqueue([](){
-            if (s_Backend) {
-                s_Backend->UpdateUniformBuffer(
-                    s_LightUBO,
-                    &s_LightData,
-                    sizeof(LightData),
-                    0
-                );
-            }
-        });
-    }
-
-    void Renderer::EndLights() {
-        memset(s_LightData.lights, 0, sizeof(s_LightData.lights));
-        s_LightData.lightCount = 0;
     }
 
     void Renderer::SetCamera(const CameraDesc& camera) {
         s_CameraData = { Math::ToGLM(camera.ViewProjection) };
-    }
 
-    void Renderer::SubmitDirectionalLight(const Math::Vector3f& direction, const Math::Vector3f& color, float intensity) {
-        AETHER_ASSERT_MSG(s_LightData.lightCount < MaxDirectionalLights, "Too many lights!");
-
-        s_LightData.lights[s_LightData.lightCount] = {
-            glm::vec4(Math::ToGLM(direction), 0.f),
-            glm::vec4(Math::ToGLM(color), intensity)
-        };
-        s_LightData.lightCount++;
+        s_RenderThread.Enqueue([](){
+            if (s_Backend) {
+                s_Backend->UpdateUniformBuffer(
+                    s_CameraUBO,
+                    &s_CameraData,
+                    sizeof(CameraData),
+                    0
+                );
+            }
+        });
     }
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {
@@ -401,7 +346,6 @@ namespace Aether::Renderer {
             const auto& uniformBufferSlots = material.Pipeline.uniformBufferSlots;
 
             s_Backend->BindUniformBuffer(s_CameraUBO, uniformBufferSlots.camera);
-            s_Backend->BindUniformBuffer(s_LightUBO, uniformBufferSlots.light);
 
             s_Backend->UpdateUniformBuffer(s_ObjectUBO, &modelGLM, sizeof(glm::mat4), 0);
             s_Backend->BindUniformBuffer(s_ObjectUBO, uniformBufferSlots.object);

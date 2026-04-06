@@ -5,9 +5,9 @@
 #include <Aether/Math/Math.h>
 
 #include <glm/trigonometric.hpp>
-#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-#include "glm/ext/matrix_transform.hpp"
+#include "Interop.h"
 
 namespace Aether::Math {
     float Radians(float degrees) {
@@ -18,14 +18,27 @@ namespace Aether::Math {
         return glm::degrees(radians);
     }
 
+    Vector3f Normalize(const Vector3f& v) {
+        return FromGLM(glm::normalize(ToGLM(v)));
+    }
+
+    Vector3f Cross(const Vector3f& a, const Vector3f& b) {
+        return {
+            a.y * b.z - a.z * b.y,
+            a.z * b.x - a.x * b.z,
+            a.x * b.y - a.y * b.x
+        };
+    }
+
     Matrix4f Translate(const Matrix4f& m, const Vector3f& v) {
-        Matrix4f result = m;
+        return FromGLM(glm::translate(ToGLM(m), ToGLM(v)));
+    }
 
-        result[3][0] = m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0];
-        result[3][1] = m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1];
-        result[3][2] = m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z + m[3][2];
-        result[3][3] = m[0][3] * v.x + m[1][3] * v.y + m[2][3] * v.z + m[3][3];
+    Matrix4f LookAt(const Vector3f& eye, const Vector3f& center, const Vector3f& up) {
+        return FromGLM(glm::lookAt(ToGLM(eye), ToGLM(center), ToGLM(up)));
+    }
 
-        return result;
+    Matrix4f Perspective(float fov, float aspect, float near, float far) {
+        return FromGLM(glm::perspective(fov, aspect, near, far));
     }
 }
