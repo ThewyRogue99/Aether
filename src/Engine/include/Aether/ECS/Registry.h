@@ -20,11 +20,14 @@ namespace Aether::ECS {
 
         [[nodiscard]] bool IsAlive(const Entity& entity) const;
 
-        template<typename T>
-        void AddComponent(const Entity& entity, const T& component) {
+        template<typename T, typename... Args>
+        T& AddComponent(const Entity& entity, Args&&... args) {
             AETHER_ASSERT_MSG(IsAlive(entity), "Invalid entity!");
 
-            GetStorage<T>().Add(entity, component);
+            auto& storage = GetStorage<T>();
+            storage.Add(entity, T(std::forward<Args>(args)...));
+
+            return storage.Get(entity);
         }
 
         template<typename T>
