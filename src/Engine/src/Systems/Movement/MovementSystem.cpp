@@ -15,12 +15,8 @@ namespace Aether::Systems {
 
     void MovementSystem::OnUpdate(Scene::Scene& scene, float DeltaTime) {
         const auto view = scene.View<Components::Transform, Components::Velocity>();
-        auto& registry = scene.GetRegistry();
 
-        for (auto entity : view) {
-            auto& transform = registry.GetComponent<Components::Transform>(entity);
-            auto& velocity  = registry.GetComponent<Components::Velocity>(entity);
-
+        for (const auto& [_, transform, velocity] : view.each()) {
             transform.Position += velocity.Value * DeltaTime;
         }
     }

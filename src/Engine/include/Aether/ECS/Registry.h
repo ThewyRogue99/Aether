@@ -94,8 +94,56 @@ namespace Aether::ECS {
                 size_t m_Index = 0;
             };
 
+            class EachIterator {
+            public:
+                EachIterator(const RegistryView* view, size_t index) : m_View(view), m_Index(index) {
+                    SkipInvalid();
+                }
+
+                auto operator*() const {
+                    Entity e = m_View->PrimaryEntities()[m_Index];
+                    return std::tuple<Entity, Ts&...>(e, m_View->Storage<Ts>().Get(e)...);
+                }
+
+                EachIterator& operator++() {
+                    ++m_Index;
+                    SkipInvalid();
+                    return *this;
+                }
+
+                bool operator==(const EachIterator& other) const {
+                    return m_Index == other.m_Index && m_View == other.m_View;
+                }
+
+                bool operator!=(const EachIterator& other) const {
+                    return !(*this == other);
+                }
+
+            private:
+                void SkipInvalid() {
+                    const auto& ents = m_View->PrimaryEntities();
+
+                    while (m_Index < ents.size() && !m_View->MatchesAll(ents[m_Index])) ++m_Index;
+                }
+
+                const RegistryView* m_View = nullptr;
+                size_t m_Index = 0;
+            };
+
             Iterator begin() const { return Iterator(this, 0); }
             Iterator end() const { return Iterator(this, PrimaryEntities().size()); }
+
+            EachIterator each_begin() const { return EachIterator(this, 0); }
+            EachIterator each_end() const { return EachIterator(this, PrimaryEntities().size()); }
+
+            struct EachProxy {
+                const RegistryView* view;
+
+                EachIterator begin() const { return view->each_begin(); }
+                EachIterator end() const { return view->each_end(); }
+            };
+
+            EachProxy each() const { return EachProxy{this}; }
 
             template<typename T>
             T& Get(Entity e) const {
@@ -161,6 +209,13 @@ namespace Aether::ECS {
             return RegistryView<Ts...>(&GetStorage<Ts>()...);
         }
 
+        template<typename... Ts, typename Func>
+        void Each(Func&& func) {
+            for (auto view = View<Ts...>(); auto entity : view) {
+                func(entity, view.template Get<Ts>(entity)...);
+            }
+        }
+
     private:
         template<typename T>
         ComponentStorage<T>& GetStorage() {
@@ -176,6 +231,6 @@ namespace Aether::ECS {
     private:
         EntityManager m_EntityManager;
 
-        std::unordered_map<std::type_index, std::unique_ptr<IComponentStorage>> m_Storages;
+        std::unordered_map<std::type_index, Engine::Scope<IComponentStorage>> m_Storages;
     };
 }

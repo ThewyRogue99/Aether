@@ -38,6 +38,7 @@ target_link_libraries(aether_engine
         Aether::Engine::Events
         Aether::Engine::Renderer
         Aether::Engine::Scene
+        Aether::Engine::Systems
 )
 
 add_library(Aether::Engine ALIAS aether_engine)

@@ -1,5 +1,6 @@
 add_library(aether_engine_ecs STATIC
     EntityManager.cpp
+    Registry.cpp
 )
 
 target_include_directories(aether_engine_ecs PRIVATE ${ENGINE_INCLUDE_DIR})
