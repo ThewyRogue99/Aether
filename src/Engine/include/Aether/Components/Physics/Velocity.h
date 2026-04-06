@@ -8,6 +8,6 @@
 
 namespace Aether::Components {
     struct Velocity {
-        Math::Vector3f Value{ 0.0f };
+        Math::Vector3f Value{ 0.f, 0.f, 0.f };
     };
 }

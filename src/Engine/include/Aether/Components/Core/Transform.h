@@ -8,8 +8,8 @@
 
 namespace Aether::Components {
     struct Transform {
-        Math::Vector3f Position{ 0.0f };
-        Math::Vector3f Rotation{ 0.0f };
-        Math::Vector3f Scale{ 1.0f };
+        Math::Vector3f Position{ 0.f, 0.f, 0.f };
+        Math::Vector3f Rotation{ 0.f, 0.f, 0.f };
+        Math::Vector3f Scale{ 1.f, 1.f, 1.f };
     };
 }
