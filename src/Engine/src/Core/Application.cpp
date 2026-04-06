@@ -20,6 +20,8 @@
 
 #include <Aether/Renderer/Renderer.h>
 
+#include "Aether/Scene/Scene.h"
+
 namespace {
     Aether::Engine::Application* s_Instance = nullptr;
 }
@@ -65,6 +67,8 @@ namespace Aether::Engine {
 
         EventQueue m_EventQueue;
         LayerStack m_LayerStack;
+
+        Scope<Scene::Scene> m_ActiveScene;
 
         Scope<Platform::Window> m_Window;
     };
