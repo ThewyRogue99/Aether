@@ -7,25 +7,24 @@
 #include <Aether/Systems/ISystem.h>
 
 namespace Aether::Scene {
-    Scene::Scene() = default;
-
+    Scene::Scene()  = default;
     Scene::~Scene() = default;
 
-    Entity Scene::CreateEntity() {
-        return { m_Registry.CreateEntity(), this };
-    }
+    void Scene::OnLoad() { }
+
+    void Scene::OnUnload() { }
+
+    Entity Scene::CreateEntity() { return { m_Registry.CreateEntity(), this }; }
 
     void Scene::DestroyEntity(const Entity& entity) {
-        AETHER_ASSERT_MSG(entity, "Invalid entity!");
-        AETHER_ASSERT_MSG(entity.GetScene() == this, "Entity does not belong to this scene!");
+        AETHER_ASSERT_MSG(entity, "Scene::DestroyEntity — invalid entity");
+        AETHER_ASSERT_MSG(entity.GetScene() == this, "Scene::DestroyEntity — entity belongs to a different scene");
 
         m_Registry.DestroyEntity(entity.GetHandle());
     }
 
-    void Scene::OnUpdate(float DeltaTime) {
-        for (const auto& system : m_Systems) {
-            system->OnUpdate(*this, DeltaTime);
-        }
+    void Scene::OnUpdate(float deltaTime) {
+        for (const auto& entry : m_Systems) entry.system->OnUpdate(*this, deltaTime);
     }
 
     ECS::Registry& Scene::GetRegistry() {

@@ -17,16 +17,15 @@
 #include <Aether/Core/LayerStack.h>
 
 #include <Aether/Input/Input.h>
-
 #include <Aether/Renderer/Renderer.h>
-
-#include "Aether/Scene/Scene.h"
+#include <Aether/Scene/SceneManager.h>
 
 namespace {
     Aether::Engine::Application* s_Instance = nullptr;
 }
 
 namespace Aether::Engine {
+
     class Application::Impl {
     public:
         Impl(const String& name, int argc, char** argv) : m_Name(name), m_Args({ argc, argv }) { }
@@ -40,7 +39,7 @@ namespace Aether::Engine {
 
         void Run() {
             while (m_Running && !m_Window->ShouldClose()) {
-                const auto currentTime = Platform::Platform::GetTime();
+                const double currentTime = Platform::Platform::GetTime();
                 const auto deltaTime = static_cast<float>(currentTime - m_LastFrameTime);
 
                 m_LastFrameTime = currentTime;
@@ -55,6 +54,8 @@ namespace Aether::Engine {
                 for (const auto& layer : m_LayerStack)
                     layer->OnUpdate(deltaTime);
 
+                m_SceneManager.OnUpdate(deltaTime);
+
                 s_Instance->OnUpdate(deltaTime);
             }
         }
@@ -68,14 +69,14 @@ namespace Aether::Engine {
         EventQueue m_EventQueue;
         LayerStack m_LayerStack;
 
-        Scope<Scene::Scene> m_ActiveScene;
+        Scene::SceneManager m_SceneManager;
 
         Scope<Platform::Window> m_Window;
     };
 
     Application::Application(const String& name, int argc, char** argv)
         : m_Impl(MakeScope<Impl>(name, argc, argv)) {
-        AETHER_ASSERT_MSG(!s_Instance, "An application already exists");
+        AETHER_ASSERT_MSG(!s_Instance, "An Application already exists");
         s_Instance = this;
     }
 
@@ -83,9 +84,7 @@ namespace Aether::Engine {
 
     void Application::Run() {
         Init();
-
         m_Impl->Run();
-
         Shutdown();
     }
 
@@ -105,16 +104,18 @@ namespace Aether::Engine {
         return *m_Impl->m_Window;
     }
 
+    Scene::SceneManager& Application::GetSceneManager() const {
+        return m_Impl->m_SceneManager;
+    }
+
     Application& Application::Get() {
-        AETHER_ASSERT_MSG(s_Instance, "No application initialized");
+        AETHER_ASSERT_MSG(s_Instance, "No Application initialized");
         return *s_Instance;
     }
 
     void Application::OnInit() { }
-
     void Application::OnShutdown() { }
-
-    void Application::OnUpdate(float DeltaTime) { }
+    void Application::OnUpdate(float) { }
 
     void Application::OnEvent(Event& e) {
         Input::OnEvent(e);
@@ -132,16 +133,13 @@ namespace Aether::Engine {
 
         for (auto it = m_Impl->m_LayerStack.rbegin(); it != m_Impl->m_LayerStack.rend(); ++it) {
             (*it)->OnEvent(e);
-
             if (e.Handled) break;
         }
     }
 
     void Application::Init() {
         m_Impl->Init();
-
         Renderer::Renderer::Init({ m_Impl->m_Window.get() });
-
         OnInit();
     }
 

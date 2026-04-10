@@ -12,17 +12,19 @@ namespace Aether::Platform {
     class Window;
 }
 
+namespace Aether::Scene {
+    class SceneManager;
+}
+
 namespace Aether::Engine {
     class Layer;
     class Event;
 
     struct AETHER_API CommandLineArgs {
-        int Count = 0;
+        int Count  = 0;
         char** Values = nullptr;
 
-        const char* operator[](int index) const {
-            return Values[index];
-        }
+        const char* operator[](int index) const { return Values[index]; }
     };
 
     class AETHER_API Application {
@@ -37,6 +39,7 @@ namespace Aether::Engine {
         void PushOverlay(Scope<Layer> overlay);
 
         [[nodiscard]] Platform::Window& GetWindow() const;
+        [[nodiscard]] Scene::SceneManager& GetSceneManager() const;
 
         static Application& Get();
 

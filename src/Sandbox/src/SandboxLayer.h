@@ -26,8 +26,6 @@ namespace Aether {
         Scene::Entity m_TexEntity;
         Scene::Entity m_CameraEntity;
 
-        Engine::Scope<Scene::Scene> m_ActiveScene;
-
         float m_DeltaTime = 0.0f;
     };
 }

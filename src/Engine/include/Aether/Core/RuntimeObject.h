@@ -17,7 +17,9 @@ namespace Aether::Engine {
     class AETHER_API RuntimeObjectBase {
     public:
         virtual ~RuntimeObjectBase() = default;
-        [[nodiscard]] virtual bool IsType(TypeId id) const = 0;
+        [[nodiscard]] virtual bool IsType(TypeId id) const {
+            return false;
+        }
     };
 
     template<typename Derived, typename Parent = RuntimeObjectBase>
