@@ -64,6 +64,14 @@ namespace Aether::Renderer {
         void BindTexture2D(const TextureHandle& texture, uint32_t slot) override;
         void BindSampler(const SamplerHandle& sampler, uint32_t slot) override;
 
+        RenderSurfaceHandle CreateRenderSurface(const RenderSurfaceDesc& desc) override;
+        void DestroyRenderSurface(const RenderSurfaceHandle& handle) override;
+        void ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height) override;
+        TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) override;
+
+        void BeginRenderSurface(const RenderSurfaceHandle& handle) override;
+        void EndRenderSurface() override;
+
         void BindPipeline(const PipelineHandle& handle) override;
         void BindVertexBuffer(const BufferHandle& handle) override;
         void BindIndexBuffer(const BufferHandle& handle) override;

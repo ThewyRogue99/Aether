@@ -33,18 +33,16 @@ namespace Aether::Scene {
     Entity Scene::FindEntityByName(const Engine::String& name) {
         auto view = m_Registry.View<Components::Name>();
         for (const auto& [entity, nameComp] : view.each()) {
-            if (nameComp.Value.view() == name)
-                return { entity, this };
+            if (nameComp.Value == name) return { entity, this };
         }
-        return {};
+        return { };
     }
 
     std::vector<Entity> Scene::FindEntitiesByTag(const Engine::String& tag) {
         std::vector<Entity> result;
         auto view = m_Registry.View<Components::Tag>();
         for (const auto& [entity, tagComp] : view.each()) {
-            if (tagComp.HasTag(tag))
-                result.push_back({ entity, this });
+            if (tagComp.HasTag(tag)) result.emplace_back( entity, this );
         }
         return result;
     }

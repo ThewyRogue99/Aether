@@ -309,6 +309,56 @@ namespace Aether::Renderer {
         });
     }
 
+    RenderSurfaceHandle Renderer::CreateRenderSurface(const RenderSurfaceDesc& desc) {
+        RenderSurfaceHandle out;
+
+        s_RenderThread.Enqueue([&]() {
+            out = s_Backend->CreateRenderSurface(desc);
+        });
+
+        s_RenderThread.Flush();
+        return out;
+    }
+
+    void Renderer::DestroyRenderSurface(const RenderSurfaceHandle& handle) {
+        if (!handle) return;
+
+        s_RenderThread.Enqueue([=]() {
+            s_Backend->DestroyRenderSurface(handle);
+        });
+    }
+
+    void Renderer::ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height) {
+        s_RenderThread.Enqueue([=]() {
+            if (s_Backend) s_Backend->ResizeRenderSurface(handle, width, height);
+        });
+
+        s_RenderThread.Flush();
+    }
+
+    TextureHandle Renderer::GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) {
+        TextureHandle out;
+
+        s_RenderThread.Enqueue([&]() {
+            out = s_Backend->GetRenderSurfaceColorAttachment(handle);
+        });
+
+        s_RenderThread.Flush();
+        return out;
+    }
+
+    void Renderer::BeginRenderSurface(const RenderSurfaceHandle& handle) {
+        s_RenderThread.Enqueue([=]() {
+            if (s_Backend) s_Backend->BeginRenderSurface(handle);
+        });
+    }
+
+    void Renderer::EndRenderSurface() {
+        s_RenderThread.Enqueue([]() {
+            if (s_Backend) s_Backend->EndRenderSurface();
+        });
+    }
+
     void Renderer::SetMaterialColor(Material& material, const Math::Vector4f& color) {
         s_RenderThread.Enqueue([=]() {
             const glm::vec4 colorData = Math::ToGLM(color);

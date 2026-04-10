@@ -512,6 +512,132 @@ namespace Aether::Renderer {
             );
         }
 
+        RenderSurfaceHandle CreateRenderSurface(const RenderSurfaceDesc& desc) {
+            GLRenderSurface surface{};
+            surface.width = desc.width;
+            surface.height = desc.height;
+            surface.internalFmt = ToGLInternalFormat(desc.colorFormat);
+            surface.fmt = ToGLFormat(desc.colorFormat);
+
+            // Color texture
+            glGenTextures(1, &surface.colorTexture);
+            glBindTexture(GL_TEXTURE_2D, surface.colorTexture);
+            glTexImage2D(
+                GL_TEXTURE_2D, 0,
+                static_cast<GLint>(surface.internalFmt),
+                static_cast<GLsizei>(desc.width),
+                static_cast<GLsizei>(desc.height),
+                0, surface.fmt, GL_UNSIGNED_BYTE, nullptr
+            );
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            // Register in texture map so GetRenderSurfaceColorAttachment returns a usable TextureHandle
+            const uint32_t texHandle = ++m_NextTex;
+            m_Textures2D[texHandle] = { surface.colorTexture, desc.width, desc.height, surface.internalFmt, surface.fmt };
+            surface.colorTextureHandle = texHandle;
+
+            // Depth + stencil renderbuffer
+            glGenRenderbuffers(1, &surface.depthRBO);
+            glBindRenderbuffer(GL_RENDERBUFFER, surface.depthRBO);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
+                static_cast<GLsizei>(desc.width), static_cast<GLsizei>(desc.height));
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+            // Framebuffer
+            glGenFramebuffers(1, &surface.fbo);
+            glBindFramebuffer(GL_FRAMEBUFFER, surface.fbo);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, surface.colorTexture, 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, surface.depthRBO);
+
+            AETHER_ASSERT_MSG(
+                glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+                "RenderSurface framebuffer is not complete"
+            );
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            const uint32_t id = ++m_NextRenderSurfaceId;
+            m_RenderSurfaces[id] = surface;
+            return { id };
+        }
+
+        void DestroyRenderSurface(const RenderSurfaceHandle& handle) {
+            const auto it = m_RenderSurfaces.find(handle.id);
+            if (it == m_RenderSurfaces.end()) return;
+
+            const auto& surface = it->second;
+
+            glDeleteFramebuffers(1, &surface.fbo);
+            glDeleteRenderbuffers(1, &surface.depthRBO);
+
+            // Remove color texture from the texture map and delete it
+            m_Textures2D.erase(surface.colorTextureHandle);
+            glDeleteTextures(1, &surface.colorTexture);
+
+            m_RenderSurfaces.erase(it);
+        }
+
+        void ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height) {
+            const auto it = m_RenderSurfaces.find(handle.id);
+            AETHER_ASSERT(it != m_RenderSurfaces.end());
+
+            auto& surface = it->second;
+
+            if (surface.width == width && surface.height == height) return;
+
+            surface.width = width;
+            surface.height = height;
+
+            // Recreate color texture at new size
+            glBindTexture(GL_TEXTURE_2D, surface.colorTexture);
+            glTexImage2D(
+                GL_TEXTURE_2D, 0,
+                static_cast<GLint>(surface.internalFmt),
+                static_cast<GLsizei>(width),
+                static_cast<GLsizei>(height),
+                0, surface.fmt, GL_UNSIGNED_BYTE, nullptr
+            );
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            // Update the texture map entry
+            m_Textures2D[surface.colorTextureHandle] = {
+                surface.colorTexture, width, height, surface.internalFmt, surface.fmt
+            };
+
+            // Recreate depth renderbuffer at new size
+            glBindRenderbuffer(GL_RENDERBUFFER, surface.depthRBO);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
+                static_cast<GLsizei>(width), static_cast<GLsizei>(height));
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        }
+
+        TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) {
+            const auto it = m_RenderSurfaces.find(handle.id);
+            AETHER_ASSERT(it != m_RenderSurfaces.end());
+
+            return { it->second.colorTextureHandle };
+        }
+
+        void BeginRenderSurface(const RenderSurfaceHandle& handle) {
+            const auto it = m_RenderSurfaces.find(handle.id);
+            AETHER_ASSERT(it != m_RenderSurfaces.end());
+
+            const auto& surface = it->second;
+
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_PreviousFBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, surface.fbo);
+            glViewport(0, 0, static_cast<GLsizei>(surface.width), static_cast<GLsizei>(surface.height));
+        }
+
+        void EndRenderSurface() {
+            glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(m_PreviousFBO));
+            m_PreviousFBO = 0;
+        }
+
     private:
         struct GLBuffer {
             GLuint id;
@@ -551,6 +677,17 @@ namespace Aether::Renderer {
             GLuint id = 0;
         };
 
+        struct GLRenderSurface {
+            GLuint fbo = 0;
+            GLuint colorTexture = 0;
+            GLuint depthRBO = 0;
+            uint32_t width = 0;
+            uint32_t height = 0;
+            GLenum internalFmt = 0;
+            GLenum fmt = 0;
+            uint32_t colorTextureHandle = 0;
+        };
+
     private:
         Platform::GraphicsContext* m_Context = nullptr;
 
@@ -582,6 +719,10 @@ namespace Aether::Renderer {
 
         std::unordered_map<uint32_t, GLSampler> m_Samplers;
         uint32_t m_NextSampler = 0;
+
+        std::unordered_map<uint32_t, GLRenderSurface> m_RenderSurfaces;
+        uint32_t m_NextRenderSurfaceId = 0;
+        GLint m_PreviousFBO = 0;
     };
 
     GLBackend::GLBackend() : m_Impl(Engine::MakeScope<Impl>()) { }
@@ -695,6 +836,30 @@ namespace Aether::Renderer {
 
     void GLBackend::BindSampler(const SamplerHandle& sampler, uint32_t slot) {
         m_Impl->BindSampler(sampler, slot);
+    }
+
+    RenderSurfaceHandle GLBackend::CreateRenderSurface(const RenderSurfaceDesc& desc) {
+        return m_Impl->CreateRenderSurface(desc);
+    }
+
+    void GLBackend::DestroyRenderSurface(const RenderSurfaceHandle& handle) {
+        m_Impl->DestroyRenderSurface(handle);
+    }
+
+    void GLBackend::ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height) {
+        m_Impl->ResizeRenderSurface(handle, width, height);
+    }
+
+    TextureHandle GLBackend::GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) {
+        return m_Impl->GetRenderSurfaceColorAttachment(handle);
+    }
+
+    void GLBackend::BeginRenderSurface(const RenderSurfaceHandle& handle) {
+        m_Impl->BeginRenderSurface(handle);
+    }
+
+    void GLBackend::EndRenderSurface() {
+        m_Impl->EndRenderSurface();
     }
 
     void GLBackend::BindPipeline(const PipelineHandle& handle) {

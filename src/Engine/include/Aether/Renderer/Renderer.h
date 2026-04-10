@@ -8,6 +8,7 @@
 #include <Aether/Renderer/Shader.h>
 #include <Aether/Renderer/Pipeline.h>
 #include <Aether/Renderer/RenderAPI.h>
+#include <Aether/Renderer/RenderSurface.h>
 #include <Aether/Renderer/Mesh.h>
 #include <Aether/Renderer/Material.h>
 #include <Aether/Renderer/Texture.h>
@@ -71,6 +72,14 @@ namespace Aether::Renderer {
         static void DestroySampler(const SamplerHandle& sampler);
 
         static void SetMaterialColor(Material& material, const Math::Vector4f& color);
+
+        static RenderSurfaceHandle CreateRenderSurface(const RenderSurfaceDesc& desc);
+        static void DestroyRenderSurface(const RenderSurfaceHandle& handle);
+        static void ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height);
+        static TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle);
+
+        static void BeginRenderSurface(const RenderSurfaceHandle& handle);
+        static void EndRenderSurface();
 
         static void BindPipeline(const PipelineHandle& handle);
         static void BindVertexBuffer(const BufferHandle& handle);

@@ -17,8 +17,20 @@ namespace Aether::Systems {
 
     RenderingSystem::~RenderingSystem() = default;
 
+    void RenderingSystem::SetRenderSurface(Renderer::RenderSurfaceHandle surface) {
+        m_RenderSurface = surface;
+    }
+
+    Renderer::RenderSurfaceHandle RenderingSystem::GetRenderSurface() const {
+        return m_RenderSurface;
+    }
+
     void RenderingSystem::OnUpdate(Scene::Scene& scene, float DeltaTime) {
         Renderer::Renderer::BeginFrame();
+
+        if (m_RenderSurface) {
+            Renderer::Renderer::BeginRenderSurface(m_RenderSurface);
+        }
 
         Renderer::Renderer::SetClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         Renderer::Renderer::Clear();
@@ -70,6 +82,10 @@ namespace Aether::Systems {
             model = Math::Scale(model, transform.Scale);
 
             Renderer::Renderer::DrawMesh(mesh.Mesh, mesh.Material, model);
+        }
+
+        if (m_RenderSurface) {
+            Renderer::Renderer::EndRenderSurface();
         }
 
         Renderer::Renderer::EndFrame();

@@ -10,6 +10,7 @@
 #include <Aether/Renderer/RenderAPI.h>
 #include <Aether/Renderer/Texture.h>
 #include <Aether/Renderer/Sampler.h>
+#include <Aether/Renderer/RenderSurface.h>
 
 namespace Aether::Platform {
     class GraphicsContext;
@@ -78,6 +79,14 @@ namespace Aether::Renderer {
 
         virtual void BindTexture2D(const TextureHandle& texture, uint32_t slot) = 0;
         virtual void BindSampler(const SamplerHandle& sampler, uint32_t slot) = 0;
+
+        virtual RenderSurfaceHandle CreateRenderSurface(const RenderSurfaceDesc& desc) = 0;
+        virtual void DestroyRenderSurface(const RenderSurfaceHandle& handle) = 0;
+        virtual void ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height) = 0;
+        virtual TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) = 0;
+
+        virtual void BeginRenderSurface(const RenderSurfaceHandle& handle) = 0;
+        virtual void EndRenderSurface() = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t firstVertex) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) = 0;
