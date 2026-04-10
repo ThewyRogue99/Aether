@@ -4,8 +4,11 @@
 
 #pragma once
 
+#include <vector>
+
 #include <Aether/Core/Core.h>
 #include <Aether/Core/RuntimeObject.h>
+#include <Aether/Core/String.h>
 #include <Aether/ECS/Registry.h>
 #include <Aether/Scene/Entity.h>
 
@@ -23,7 +26,11 @@ namespace Aether::Scene {
         virtual void OnUnload();
 
         Entity CreateEntity();
+        Entity CreateEntity(const Engine::String& name);
         void DestroyEntity(const Entity& entity);
+
+        Entity FindEntityByName(const Engine::String& name);
+        std::vector<Entity> FindEntitiesByTag(const Engine::String& tag);
 
         void OnUpdate(float deltaTime);
 

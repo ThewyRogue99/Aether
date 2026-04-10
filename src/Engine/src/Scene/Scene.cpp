@@ -4,6 +4,8 @@
 
 #include <Aether/Scene/Scene.h>
 
+#include <Aether/Components/Core/Name.h>
+#include <Aether/Components/Core/Tag.h>
 #include <Aether/Systems/ISystem.h>
 
 namespace Aether::Scene {
@@ -14,7 +16,38 @@ namespace Aether::Scene {
 
     void Scene::OnUnload() { }
 
-    Entity Scene::CreateEntity() { return { m_Registry.CreateEntity(), this }; }
+    Entity Scene::CreateEntity() {
+        Entity entity{ m_Registry.CreateEntity(), this };
+        entity.AddComponent<Components::Name>();
+        entity.AddComponent<Components::Tag>();
+        return entity;
+    }
+
+    Entity Scene::CreateEntity(const Engine::String& name) {
+        Entity entity{ m_Registry.CreateEntity(), this };
+        entity.AddComponent<Components::Name>(Engine::String(name));
+        entity.AddComponent<Components::Tag>();
+        return entity;
+    }
+
+    Entity Scene::FindEntityByName(const Engine::String& name) {
+        auto view = m_Registry.View<Components::Name>();
+        for (const auto& [entity, nameComp] : view.each()) {
+            if (nameComp.Value.view() == name)
+                return { entity, this };
+        }
+        return {};
+    }
+
+    std::vector<Entity> Scene::FindEntitiesByTag(const Engine::String& tag) {
+        std::vector<Entity> result;
+        auto view = m_Registry.View<Components::Tag>();
+        for (const auto& [entity, tagComp] : view.each()) {
+            if (tagComp.HasTag(tag))
+                result.push_back({ entity, this });
+        }
+        return result;
+    }
 
     void Scene::DestroyEntity(const Entity& entity) {
         AETHER_ASSERT_MSG(entity, "Scene::DestroyEntity — invalid entity");

@@ -8,6 +8,7 @@ target_include_directories(aether_engine_scene PRIVATE ${ENGINE_INCLUDE_DIR} ${E
 
 target_link_libraries(aether_engine_scene PRIVATE
     aether_engine_build
+    Aether::Engine::Core
     Aether::Engine::Math
     Aether::Engine::ECS
     glm::glm
