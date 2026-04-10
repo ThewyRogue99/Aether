@@ -30,10 +30,6 @@ namespace Aether::Math {
         };
     }
 
-    Matrix4f Translate(const Matrix4f& m, const Vector3f& v) {
-        return FromGLM(glm::translate(ToGLM(m), ToGLM(v)));
-    }
-
     Matrix4f LookAt(const Vector3f& eye, const Vector3f& center, const Vector3f& up) {
         return FromGLM(glm::lookAt(ToGLM(eye), ToGLM(center), ToGLM(up)));
     }

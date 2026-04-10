@@ -145,7 +145,7 @@ namespace Aether {
             m_CameraEntity = m_ActiveScene->CreateEntity();
 
             auto& transform = m_CameraEntity.AddComponent<Components::Transform>();
-            transform.Position = Math::Vector3f{ 0.f, 0.f, -2.f };
+            transform.Position = Math::Vector3f{ 0.f, 0.f, -4.f };
 
             auto& camera = m_CameraEntity.AddComponent<Components::Camera>();
             camera.FOV = 60.f;
@@ -159,7 +159,7 @@ namespace Aether {
             m_GreenEntity = m_ActiveScene->CreateEntity();
 
             auto& transform = m_GreenEntity.AddComponent<Components::Transform>();
-            transform.Position = Math::Vector3f{ 0.5f, 0.f, 0.f };
+            transform.Position = Math::Vector3f{ 1.f, 0.f, 0.f };
 
             auto greenMaterial = Renderer::Renderer::CreateMaterial(pipeline, "GreenMat");
 
@@ -176,7 +176,8 @@ namespace Aether {
             m_TexEntity = m_ActiveScene->CreateEntity();
 
             auto& transform = m_TexEntity.AddComponent<Components::Transform>();
-            transform.Position = Math::Vector3f{ -0.5f, 0.f, 0.f };
+            transform.Position = Math::Vector3f{ -1.f, 0.f, 0.f };
+            transform.Scale = Math::Vector3f{ 1.5f, 1.5f, 1.5f };
 
             uint8_t pixels[] = {
                 // R, G, B, A
@@ -239,8 +240,14 @@ namespace Aether {
         );
     }
 
+    static constexpr float rotationSpeed = 40.f;
+
     void SandboxLayer::OnUpdate(float deltaTime) {
         m_DeltaTime = deltaTime;
+
+        auto& transform = m_TexEntity.GetComponent<Components::Transform>();
+
+        transform.Rotation.z += rotationSpeed * deltaTime;
 
         if (m_ActiveScene) {
             m_ActiveScene->OnUpdate(deltaTime);

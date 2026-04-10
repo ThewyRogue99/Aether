@@ -59,7 +59,15 @@ namespace Aether::Systems {
         }
 
         for (const auto& [entity, transform, mesh] : scene.View<Components::Transform, Components::MeshRenderer>().each()) {
-            const auto model = Math::Translate(Math::Matrix4f::Identity(), transform.Position);
+            auto model = Math::Matrix4f::Identity();
+
+            model = Math::Translate(model, transform.Position);
+
+            model = Math::Rotate(model, Math::Radians(transform.Rotation.x), { 1.0f, 0.0f, 0.0f });
+            model = Math::Rotate(model, Math::Radians(transform.Rotation.y), { 0.0f, 1.0f, 0.0f });
+            model = Math::Rotate(model, Math::Radians(transform.Rotation.z), { 0.0f, 0.0f, 1.0f });
+
+            model = Math::Scale(model, transform.Scale);
 
             Renderer::Renderer::DrawMesh(mesh.Mesh, mesh.Material, model);
         }

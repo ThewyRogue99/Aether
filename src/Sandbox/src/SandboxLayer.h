@@ -29,7 +29,5 @@ namespace Aether {
         Engine::Scope<Scene::Scene> m_ActiveScene;
 
         float m_DeltaTime = 0.0f;
-
-        float m_LightRotation = 0.f;
     };
 }
