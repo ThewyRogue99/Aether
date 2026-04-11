@@ -6,23 +6,19 @@
 
 #include <Aether/Renderer/RenderThread.h>
 #include <Aether/Renderer/RenderBackend.h>
+#include <Aether/Renderer/CommandBuffer.h>
 
 #include <Aether/Core/Assert.h>
-#include <Aether/Platform/Window.h>
+#include <Aether/Platform/GraphicsContext.h>
 #include <Aether/Core/Memory/Pointer.h>
 
 #include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
 
 #include "Math/Interop.h"
 #include "OpenGL/GLBackend.h"
 
 namespace Aether::Renderer {
-    struct CameraData {
-        glm::mat4 ViewProjection;
-    } s_CameraData;
-
-    static UniformBufferHandle s_CameraUBO;
-    static UniformBufferHandle s_ObjectUBO;
     static RenderThread s_RenderThread;
     static Engine::Scope<RenderBackend> s_Backend;
     static uint64_t s_FrameIndex = 0;
@@ -30,42 +26,26 @@ namespace Aether::Renderer {
     static TextureHandle s_WhiteTexture;
     static SamplerHandle s_DefaultSampler;
 
-    static Platform::Window* s_Window = nullptr;
+    static Platform::GraphicsContext* s_Context = nullptr;
 
-    static BackendInitInfo MakeBackendInitInfo() {
-        BackendInitInfo bi{};
-        bi.context = s_Window ? s_Window->GetGraphicsContext() : nullptr;
-        bi.width  = s_Window ? s_Window->GetWidth() : 0;
-        bi.height = s_Window ? s_Window->GetHeight() : 0;
-        return bi;
-    }
+    static CommandBuffer s_CommandBuffer;
 
     void Renderer::Init(const RendererInitInfo& info) {
-        AETHER_ASSERT_MSG(info.window, "Window cannot be null");
-        s_Window = info.window;
-
-        const auto context = s_Window->GetGraphicsContext();
-
-        UniformBufferDesc desc{};
-        desc.size = sizeof(CameraData);
-        desc.usage = UniformUsage::PerFrame;
-        desc.debugName = "CameraUBO";
-
-        UniformBufferDesc objDesc{};
-        objDesc.size = sizeof(glm::mat4);
-        objDesc.usage = UniformUsage::PerObject;
-        objDesc.debugName = "ObjectUBO";
+        AETHER_ASSERT_MSG(info.context, "GraphicsContext cannot be null");
+        s_Context = info.context;
 
         s_RenderThread.Start();
 
         s_RenderThread.Enqueue([=](){
-            switch (context->GetAPI()) {
+            switch (s_Context->GetAPI()) {
                 case Platform::GraphicsAPI::OpenGL: s_Backend = Engine::MakeScope<GLBackend>(); break;
                 default: /* TODO */ break;
             }
 
             if (s_Backend) {
-                s_Backend->Init(MakeBackendInitInfo());
+                BackendInitInfo bi{};
+                bi.context = s_Context;
+                s_Backend->Init(bi);
 
                 uint8_t white[4] = { 255, 255, 255, 255 };
 
@@ -82,9 +62,6 @@ namespace Aether::Renderer {
                 sd.mag = Filter::Linear;
 
                 s_DefaultSampler = s_Backend->CreateSampler(sd);
-
-                s_CameraUBO = s_Backend->CreateUniformBuffer(desc);
-                s_ObjectUBO = s_Backend->CreateUniformBuffer(objDesc);
             }
         });
 
@@ -102,59 +79,40 @@ namespace Aether::Renderer {
         s_RenderThread.Flush();
 
         s_RenderThread.Stop();
-        s_Window = nullptr;
+        s_Context = nullptr;
     }
 
-    void Renderer::BeginFrame() {
-        s_RenderThread.Enqueue([](){
-            if (s_Backend) {
-                s_Backend->BeginFrame();
-            }
-        });
+    void Renderer::BeginFrame(const RenderSurfaceHandle& surface) {
+        s_CommandBuffer.Begin();
+        s_CommandBuffer.BeginFrame(surface);
     }
 
     void Renderer::EndFrame() {
-        s_RenderThread.Enqueue([](){
-            if (s_Backend) {
-                s_Backend->EndFrame();
-                s_Backend->Present();
-            }
+        s_CommandBuffer.EndFrame();
+        s_CommandBuffer.End();
+
+        CommandBuffer recorded = std::move(s_CommandBuffer);
+        s_RenderThread.Enqueue([buf = std::move(recorded)]() {
+            if (s_Backend) s_Backend->Execute(buf);
         });
 
         ++s_FrameIndex;
     }
 
     void Renderer::SetCamera(const CameraDesc& camera) {
-        s_CameraData = { Math::ToGLM(camera.ViewProjection) };
-
-        s_RenderThread.Enqueue([](){
-            if (s_Backend) {
-                s_Backend->UpdateUniformBuffer(
-                    s_CameraUBO,
-                    &s_CameraData,
-                    sizeof(CameraData),
-                    0
-                );
-            }
-        });
+        s_CommandBuffer.SetCamera(camera.ViewProjection);
     }
 
     void Renderer::SetClearColor(float r, float g, float b, float a) {
-        s_RenderThread.Enqueue([=](){
-            if (s_Backend) s_Backend->SetClearColor(r, g, b, a);
-        });
+        s_CommandBuffer.SetClearColor(r, g, b, a);
     }
 
     void Renderer::Clear() {
-        s_RenderThread.Enqueue([](){
-            if (s_Backend) s_Backend->Clear();
-        });
+        s_CommandBuffer.Clear();
     }
 
-    void Renderer::SetViewport(int width, int height) {
-        s_RenderThread.Enqueue([=](){
-            if (s_Backend) s_Backend->SetViewport(width, height);
-        });
+    void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const Math::Matrix4f& model) {
+        s_CommandBuffer.DrawMesh(mesh, material, model);
     }
 
     RenderAPI Renderer::GetAPI() {
@@ -347,16 +305,15 @@ namespace Aether::Renderer {
         return out;
     }
 
-    void Renderer::BeginRenderSurface(const RenderSurfaceHandle& handle) {
-        s_RenderThread.Enqueue([=]() {
-            if (s_Backend) s_Backend->BeginRenderSurface(handle);
-        });
-    }
+    RenderSurfaceHandle Renderer::GetPresentableSurface() {
+        RenderSurfaceHandle out;
 
-    void Renderer::EndRenderSurface() {
-        s_RenderThread.Enqueue([]() {
-            if (s_Backend) s_Backend->EndRenderSurface();
+        s_RenderThread.Enqueue([&]() {
+            out = s_Backend->GetPresentableSurface();
         });
+
+        s_RenderThread.Flush();
+        return out;
     }
 
     void Renderer::SetMaterialColor(Material& material, const Math::Vector4f& color) {
@@ -382,36 +339,6 @@ namespace Aether::Renderer {
     void Renderer::BindIndexBuffer(const BufferHandle& handle) {
         s_RenderThread.Enqueue([=]() {
             s_Backend->BindIndexBuffer(handle);
-        });
-    }
-
-    void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const Math::Matrix4f& model) {
-        glm::mat4 modelGLM = Math::ToGLM(model);
-
-        s_RenderThread.Enqueue([=]() {
-            if (!s_Backend) return;
-
-            s_Backend->BindPipeline(material.Pipeline);
-
-            const auto& uniformBufferSlots = material.Pipeline.uniformBufferSlots;
-
-            s_Backend->BindUniformBuffer(s_CameraUBO, uniformBufferSlots.camera);
-
-            s_Backend->UpdateUniformBuffer(s_ObjectUBO, &modelGLM, sizeof(glm::mat4), 0);
-            s_Backend->BindUniformBuffer(s_ObjectUBO, uniformBufferSlots.object);
-            s_Backend->BindUniformBuffer(material.UBO, uniformBufferSlots.material);
-
-            s_Backend->BindVertexBuffer(mesh.VertexBuffer);
-
-            s_Backend->BindTexture2D(material.Albedo, 0);
-            s_Backend->BindSampler(material.Sampler, 0);
-
-            if (mesh.IsIndexed()) {
-                s_Backend->BindIndexBuffer(mesh.IndexBuffer);
-                s_Backend->DrawIndexed(mesh.IndexCount, 0);
-            } else {
-                s_Backend->Draw(mesh.VertexCount, 0);
-            }
         });
     }
 }

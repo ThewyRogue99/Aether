@@ -9,11 +9,15 @@
 #include <unordered_map>
 
 #include <glad/gl.h>
+#include <glm/mat4x4.hpp>
 
 #include <Aether/Log/Log.h>
 #include <Aether/Core/Assert.h>
 #include <Aether/Platform/GraphicsContext.h>
 #include <Aether/Renderer/VertexLayout.h>
+#include <Aether/Renderer/CommandBuffer.h>
+
+#include "Math/Interop.h"
 
 namespace {
     Aether::Platform::GraphicsContext* s_LoaderContext = nullptr;
@@ -117,8 +121,6 @@ namespace Aether::Renderer {
 
         void Init(const BackendInitInfo& info) {
             m_Context = info.context;
-            m_Width   = info.width;
-            m_Height  = info.height;
 
             AETHER_ASSERT_MSG(m_Context, "GLBackend: GraphicsContext is null");
             AETHER_ASSERT_MSG(
@@ -132,24 +134,70 @@ namespace Aether::Renderer {
             AETHER_ASSERT_MSG(gladLoadGL(reinterpret_cast<GLADloadfunc>(GLGetProcAddress)), "Failed to initialize OpenGL via glad");
             s_LoaderContext = nullptr;
 
-            const auto framebuffer_size = m_Context->GetFrameBufferSize();
-
-            glViewport(0, 0, framebuffer_size.Width, framebuffer_size.Height);
             glEnable(GL_DEPTH_TEST);
+
+            // Register the presentable surface (FBO 0 — the window's default framebuffer)
+            {
+                const auto fbSize = m_Context->GetFrameBufferSize();
+
+                GLRenderSurface presentable{};
+                presentable.fbo = 0;
+                presentable.width = static_cast<uint32_t>(fbSize.Width);
+                presentable.height = static_cast<uint32_t>(fbSize.Height);
+                presentable.presentable = true;
+
+                m_PresentableSurfaceId = ++m_NextRenderSurfaceId;
+                m_RenderSurfaces[m_PresentableSurfaceId] = presentable;
+            }
+
+            // Create internal UBOs for camera and object transforms
+            UniformBufferDesc cameraUBODesc{};
+            cameraUBODesc.size = sizeof(glm::mat4);
+            cameraUBODesc.usage = UniformUsage::PerFrame;
+            cameraUBODesc.debugName = "CameraUBO";
+            m_CameraUBO = CreateUniformBuffer(cameraUBODesc);
+
+            UniformBufferDesc objectUBODesc{};
+            objectUBODesc.size = sizeof(glm::mat4);
+            objectUBODesc.usage = UniformUsage::PerObject;
+            objectUBODesc.debugName = "ObjectUBO";
+            m_ObjectUBO = CreateUniformBuffer(objectUBODesc);
         }
 
         void Shutdown() {
             m_Context = nullptr;
         }
 
-        void BeginFrame() {
+        void BeginFrame(const RenderSurfaceHandle& surface) {
             AETHER_ASSERT_MSG(!m_InFrame, "GLBackend::BeginFrame called twice");
             m_InFrame = true;
+            m_FrameUsedSurface = false;
+            m_FrameUsedPresentable = false;
+
+            if (surface) {
+                BeginRenderSurface(surface);
+                m_FrameUsedSurface = true;
+            }
         }
 
         void EndFrame() {
             AETHER_ASSERT_MSG(m_InFrame, "GLBackend::EndFrame without BeginFrame");
+
+            if (m_FrameUsedSurface) {
+                EndRenderSurface();
+            }
+
+            if (m_FrameUsedPresentable) {
+                m_Context->SwapBuffers();
+            }
+
+            m_FrameUsedSurface = false;
+            m_FrameUsedPresentable = false;
             m_InFrame = false;
+        }
+
+        RenderSurfaceHandle GetPresentableSurface() const {
+            return { m_PresentableSurfaceId };
         }
 
         void SetClearColor(float r, float g, float b, float a) {
@@ -168,11 +216,6 @@ namespace Aether::Renderer {
             );
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
-
-        void Present() {
-            AETHER_ASSERT_MSG(m_Context, "GLBackend::Present without context");
-            m_Context->SwapBuffers();
         }
 
         BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData) {
@@ -568,6 +611,7 @@ namespace Aether::Renderer {
         void DestroyRenderSurface(const RenderSurfaceHandle& handle) {
             const auto it = m_RenderSurfaces.find(handle.id);
             if (it == m_RenderSurfaces.end()) return;
+            if (it->second.presentable) return;
 
             const auto& surface = it->second;
 
@@ -592,6 +636,9 @@ namespace Aether::Renderer {
             surface.width = width;
             surface.height = height;
 
+            // Presentable surface (FBO 0) doesn't own textures or renderbuffers
+            if (surface.presentable) return;
+
             // Recreate color texture at new size
             glBindTexture(GL_TEXTURE_2D, surface.colorTexture);
             glTexImage2D(
@@ -615,7 +662,7 @@ namespace Aether::Renderer {
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
         }
 
-        TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) {
+        [[nodiscard]] TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) const {
             const auto it = m_RenderSurfaces.find(handle.id);
             AETHER_ASSERT(it != m_RenderSurfaces.end());
 
@@ -628,6 +675,10 @@ namespace Aether::Renderer {
 
             const auto& surface = it->second;
 
+            if (surface.presentable) {
+                m_FrameUsedPresentable = true;
+            }
+
             glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_PreviousFBO);
             glBindFramebuffer(GL_FRAMEBUFFER, surface.fbo);
             glViewport(0, 0, static_cast<GLsizei>(surface.width), static_cast<GLsizei>(surface.height));
@@ -636,6 +687,65 @@ namespace Aether::Renderer {
         void EndRenderSurface() {
             glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(m_PreviousFBO));
             m_PreviousFBO = 0;
+        }
+
+        void Execute(const CommandBuffer& commandBuffer) {
+            for (const auto& cmd : commandBuffer.GetCommands()) {
+                switch (cmd.type) {
+                    case RenderCommandType::BeginFrame:
+                        BeginFrame(cmd.beginFrame.surface);
+                        break;
+                    case RenderCommandType::EndFrame:
+                        EndFrame();
+                        break;
+                    case RenderCommandType::SetClearColor:
+                        SetClearColor(
+                            cmd.setClearColor.r,
+                            cmd.setClearColor.g,
+                            cmd.setClearColor.b,
+                            cmd.setClearColor.a
+                        );
+                        break;
+                    case RenderCommandType::Clear:
+                        Clear();
+                        break;
+                    case RenderCommandType::SetCamera: {
+                        const glm::mat4 vp = Math::ToGLM(cmd.setCamera.viewProjection);
+                        UpdateUniformBuffer(m_CameraUBO, &vp, sizeof(glm::mat4), 0);
+                        break;
+                    }
+                    case RenderCommandType::DrawMesh:
+                        ExecuteDrawMesh(cmd.drawMesh);
+                        break;
+                }
+            }
+        }
+
+    private:
+        void ExecuteDrawMesh(const DrawMeshCmd& cmd) {
+            const glm::mat4 modelGLM = Math::ToGLM(cmd.model);
+
+            BindPipeline(cmd.material.Pipeline);
+
+            const auto& slots = cmd.material.Pipeline.uniformBufferSlots;
+
+            BindUniformBuffer(m_CameraUBO, slots.camera);
+
+            UpdateUniformBuffer(m_ObjectUBO, &modelGLM, sizeof(glm::mat4), 0);
+            BindUniformBuffer(m_ObjectUBO, slots.object);
+            BindUniformBuffer(cmd.material.UBO, slots.material);
+
+            BindVertexBuffer(cmd.mesh.VertexBuffer);
+
+            BindTexture2D(cmd.material.Albedo, 0);
+            BindSampler(cmd.material.Sampler, 0);
+
+            if (cmd.mesh.IsIndexed()) {
+                BindIndexBuffer(cmd.mesh.IndexBuffer);
+                DrawIndexed(cmd.mesh.IndexCount, 0);
+            } else {
+                Draw(cmd.mesh.VertexCount, 0);
+            }
         }
 
     private:
@@ -686,16 +796,16 @@ namespace Aether::Renderer {
             GLenum internalFmt = 0;
             GLenum fmt = 0;
             uint32_t colorTextureHandle = 0;
+            bool presentable = false;
         };
 
     private:
         Platform::GraphicsContext* m_Context = nullptr;
 
-        unsigned int m_Width  = 0;
-        unsigned int m_Height = 0;
-
         float m_ClearColor[4] = { 0.f, 0.f, 0.f, 1.f };
         bool m_InFrame = false;
+        bool m_FrameUsedSurface = false;
+        bool m_FrameUsedPresentable = false;
 
         std::unordered_map<uint32_t, GLBuffer> m_Buffers;
         uint32_t m_NextBufferId = 1;
@@ -722,7 +832,11 @@ namespace Aether::Renderer {
 
         std::unordered_map<uint32_t, GLRenderSurface> m_RenderSurfaces;
         uint32_t m_NextRenderSurfaceId = 0;
+        uint32_t m_PresentableSurfaceId = 0;
         GLint m_PreviousFBO = 0;
+
+        UniformBufferHandle m_CameraUBO;
+        UniformBufferHandle m_ObjectUBO;
     };
 
     GLBackend::GLBackend() : m_Impl(Engine::MakeScope<Impl>()) { }
@@ -741,8 +855,8 @@ namespace Aether::Renderer {
         m_Impl->Shutdown();
     }
 
-    void GLBackend::BeginFrame() {
-        m_Impl->BeginFrame();
+    void GLBackend::BeginFrame(const RenderSurfaceHandle& surface) {
+        m_Impl->BeginFrame(surface);
     }
 
     void GLBackend::EndFrame() {
@@ -755,14 +869,6 @@ namespace Aether::Renderer {
 
     void GLBackend::Clear() {
         m_Impl->Clear();
-    }
-
-    void GLBackend::Present() {
-        m_Impl->Present();
-    }
-
-    void GLBackend::SetViewport(int width, int height) {
-        glViewport(0, 0, width, height);
     }
 
     BufferHandle GLBackend::CreateBuffer(const BufferDesc& desc, const void* initialData) {
@@ -850,16 +956,12 @@ namespace Aether::Renderer {
         m_Impl->ResizeRenderSurface(handle, width, height);
     }
 
-    TextureHandle GLBackend::GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) {
+    TextureHandle GLBackend::GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) const {
         return m_Impl->GetRenderSurfaceColorAttachment(handle);
     }
 
-    void GLBackend::BeginRenderSurface(const RenderSurfaceHandle& handle) {
-        m_Impl->BeginRenderSurface(handle);
-    }
-
-    void GLBackend::EndRenderSurface() {
-        m_Impl->EndRenderSurface();
+    RenderSurfaceHandle GLBackend::GetPresentableSurface() const {
+        return m_Impl->GetPresentableSurface();
     }
 
     void GLBackend::BindPipeline(const PipelineHandle& handle) {
@@ -884,5 +986,9 @@ namespace Aether::Renderer {
 
     void GLBackend::DrawIndexed(uint32_t indexCount, uint32_t firstIndex) {
         m_Impl->DrawIndexed(indexCount, firstIndex);
+    }
+
+    void GLBackend::Execute(const CommandBuffer& commandBuffer) {
+        m_Impl->Execute(commandBuffer);
     }
 }

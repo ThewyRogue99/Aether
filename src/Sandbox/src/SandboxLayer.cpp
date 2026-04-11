@@ -23,6 +23,8 @@
 #include <Aether/Systems/Rendering/RenderingSystem.h>
 #include <Aether/Scene/Entity.h>
 
+#include "Aether/Events/WindowEvent.h"
+
 namespace Aether {
     struct Vertex {
         float position[3];
@@ -74,7 +76,6 @@ namespace Aether {
 
         void OnLoad() override {
             AddSystem<Systems::MovementSystem>(0);
-            AddSystem<Systems::RenderingSystem>(1);
 
             // Shared GPU resources
             const auto vertexBuffer = Renderer::Renderer::CreateBuffer({
@@ -208,6 +209,8 @@ namespace Aether {
     SandboxLayer::~SandboxLayer() = default;
 
     void SandboxLayer::OnAttach() {
+        m_RenderSurfaceHandle = Renderer::Renderer::GetPresentableSurface();
+
         auto& sm = Engine::Application::Get().GetSceneManager();
         Engine::Application::Get().GetSceneManager().Register<GameplayScene>("Gameplay");
 
@@ -215,6 +218,8 @@ namespace Aether {
 
         // After loading, grab our entity handles from the scene.
         if (auto* scene = static_cast<GameplayScene*>(sm.GetActiveScene())) {
+            scene->AddSystem<Systems::RenderingSystem>(1, m_RenderSurfaceHandle);
+
             m_GreenEntity = scene->OutGreenEntity;
             m_TexEntity = scene->OutTexEntity;
             m_CameraEntity = scene->OutCameraEntity;
@@ -224,24 +229,28 @@ namespace Aether {
     void SandboxLayer::OnEvent(Engine::Event& e) {
         Engine::EventDispatcher dispatcher(e);
 
-        dispatcher.Dispatch<Engine::KeyPressedEvent>(
-            [this](Engine::KeyPressedEvent& ke) {
-                if (!m_CameraEntity) return false;
+        dispatcher.Dispatch<Engine::KeyPressedEvent>([this](Engine::KeyPressedEvent& ke) {
+            if (!m_CameraEntity) return false;
 
-                auto& transform = m_CameraEntity.GetComponent<Components::Transform>();
+            auto& transform = m_CameraEntity.GetComponent<Components::Transform>();
 
-                if (ke.GetKeyCode() == Engine::KeyCode::W) transform.Position.z += 1.f * m_DeltaTime;
-                if (ke.GetKeyCode() == Engine::KeyCode::A) transform.Position.x -= 1.f * m_DeltaTime;
-                if (ke.GetKeyCode() == Engine::KeyCode::S) transform.Position.z -= 1.f * m_DeltaTime;
-                if (ke.GetKeyCode() == Engine::KeyCode::D) transform.Position.x += 1.f * m_DeltaTime;
+            if (ke.GetKeyCode() == Engine::KeyCode::W) transform.Position.z += 1.f * m_DeltaTime;
+            if (ke.GetKeyCode() == Engine::KeyCode::A) transform.Position.x -= 1.f * m_DeltaTime;
+            if (ke.GetKeyCode() == Engine::KeyCode::S) transform.Position.z -= 1.f * m_DeltaTime;
+            if (ke.GetKeyCode() == Engine::KeyCode::D) transform.Position.x += 1.f * m_DeltaTime;
 
-                AETHER_INFO("Camera: %.2f, %.2f, %.2f",
-                    transform.Position.x,
-                    transform.Position.y,
-                    transform.Position.z);
+            AETHER_INFO("Camera: %.2f, %.2f, %.2f",
+                transform.Position.x,
+                transform.Position.y,
+                transform.Position.z);
 
-                return false;
-            });
+            return false;
+        });
+
+        dispatcher.Dispatch<Engine::FramebufferResizeEvent>([this](Engine::FramebufferResizeEvent& fr) {
+            Renderer::Renderer::ResizeRenderSurface(m_RenderSurfaceHandle, fr.GetWidth(), fr.GetHeight());
+            return false;
+        });
     }
 
     static constexpr float k_RotationSpeed = 40.f;

@@ -10,13 +10,10 @@
 namespace Aether::Systems {
     class RenderingSystem : public ISystem {
     public:
-        RenderingSystem();
+        explicit RenderingSystem(Renderer::RenderSurfaceHandle renderSurface);
         ~RenderingSystem() override;
 
         void OnUpdate(Scene::Scene& scene, float DeltaTime) override;
-
-        void SetRenderSurface(Renderer::RenderSurfaceHandle surface);
-        [[nodiscard]] Renderer::RenderSurfaceHandle GetRenderSurface() const;
 
     private:
         Renderer::RenderSurfaceHandle m_RenderSurface;

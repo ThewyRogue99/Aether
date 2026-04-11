@@ -17,20 +17,16 @@
 #include <Aether/Math/Matrix.h>
 
 namespace Aether::Platform {
-    class Window;
+    class GraphicsContext;
 }
 
 namespace Aether::Renderer {
-    struct ObjectDesc {
-        Math::Matrix4f Model;
-    };
-
     struct CameraDesc {
         Math::Matrix4f ViewProjection;
     };
 
     struct RendererInitInfo {
-        Platform::Window* window = nullptr;
+        Platform::GraphicsContext* context = nullptr;
     };
 
     class Renderer {
@@ -38,15 +34,13 @@ namespace Aether::Renderer {
         static void Init(const RendererInitInfo& info);
         static void Shutdown();
 
-        static void BeginFrame();
+        static void BeginFrame(const RenderSurfaceHandle& surface);
         static void EndFrame();
 
         static void SetCamera(const CameraDesc& camera);
 
         static void SetClearColor(float r, float g, float b, float a);
         static void Clear();
-
-        static void SetViewport(int width, int height);
 
         static RenderAPI GetAPI();
 
@@ -78,8 +72,7 @@ namespace Aether::Renderer {
         static void ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height);
         static TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle);
 
-        static void BeginRenderSurface(const RenderSurfaceHandle& handle);
-        static void EndRenderSurface();
+        static RenderSurfaceHandle GetPresentableSurface();
 
         static void BindPipeline(const PipelineHandle& handle);
         static void BindVertexBuffer(const BufferHandle& handle);

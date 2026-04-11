@@ -6,8 +6,8 @@
 
 #include "Aether/Core/Layer.h"
 
-#include "Aether/Scene/Scene.h"
 #include "Aether/Scene/Entity.h"
+#include <Aether/Renderer/RenderSurface.h>
 
 namespace Aether {
     class SandboxLayer : public Engine::Layer {
@@ -22,6 +22,8 @@ namespace Aether {
         void OnUpdate(float deltaTime) override;
 
     private:
+        Renderer::RenderSurfaceHandle m_RenderSurfaceHandle;
+
         Scene::Entity m_GreenEntity;
         Scene::Entity m_TexEntity;
         Scene::Entity m_CameraEntity;

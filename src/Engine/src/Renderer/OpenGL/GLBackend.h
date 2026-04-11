@@ -24,15 +24,11 @@ namespace Aether::Renderer {
         void Init(const BackendInitInfo& info) override;
         void Shutdown() override;
 
-        void BeginFrame() override;
+        void BeginFrame(const RenderSurfaceHandle& surface) override;
         void EndFrame() override;
 
         void SetClearColor(float r, float g, float b, float a) override;
         void Clear() override;
-
-        void Present() override;
-
-        void SetViewport(int width, int height) override;
 
         BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData) override;
         void DestroyBuffer(const BufferHandle& handle) override;
@@ -67,10 +63,9 @@ namespace Aether::Renderer {
         RenderSurfaceHandle CreateRenderSurface(const RenderSurfaceDesc& desc) override;
         void DestroyRenderSurface(const RenderSurfaceHandle& handle) override;
         void ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height) override;
-        TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) override;
 
-        void BeginRenderSurface(const RenderSurfaceHandle& handle) override;
-        void EndRenderSurface() override;
+        [[nodiscard]] TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) const override;
+        [[nodiscard]] RenderSurfaceHandle GetPresentableSurface() const override;
 
         void BindPipeline(const PipelineHandle& handle) override;
         void BindVertexBuffer(const BufferHandle& handle) override;
@@ -79,6 +74,8 @@ namespace Aether::Renderer {
 
         void Draw(uint32_t vertexCount, uint32_t firstVertex) override;
         void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) override;
+
+        void Execute(const CommandBuffer& commandBuffer) override;
 
     private:
         class Impl;

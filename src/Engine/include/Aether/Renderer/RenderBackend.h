@@ -11,6 +11,7 @@
 #include <Aether/Renderer/Texture.h>
 #include <Aether/Renderer/Sampler.h>
 #include <Aether/Renderer/RenderSurface.h>
+#include <Aether/Renderer/CommandBuffer.h>
 
 namespace Aether::Platform {
     class GraphicsContext;
@@ -19,9 +20,6 @@ namespace Aether::Platform {
 namespace Aether::Renderer {
     struct BackendInitInfo {
         Platform::GraphicsContext* context = nullptr;
-
-        unsigned int width = 0;
-        unsigned int height = 0;
     };
 
     class RenderBackend {
@@ -33,15 +31,11 @@ namespace Aether::Renderer {
         virtual void Init(const BackendInitInfo& info) = 0;
         virtual void Shutdown() = 0;
 
-        virtual void BeginFrame() = 0;
+        virtual void BeginFrame(const RenderSurfaceHandle& surface) = 0;
         virtual void EndFrame() = 0;
 
         virtual void SetClearColor(float r, float g, float b, float a) = 0;
         virtual void Clear() = 0;
-
-        virtual void Present() = 0;
-
-        virtual void SetViewport(int width, int height) = 0;
 
         virtual BufferHandle CreateBuffer(const BufferDesc& desc, const void* initialData) = 0;
         virtual void DestroyBuffer(const BufferHandle& handle) = 0;
@@ -83,12 +77,13 @@ namespace Aether::Renderer {
         virtual RenderSurfaceHandle CreateRenderSurface(const RenderSurfaceDesc& desc) = 0;
         virtual void DestroyRenderSurface(const RenderSurfaceHandle& handle) = 0;
         virtual void ResizeRenderSurface(const RenderSurfaceHandle& handle, uint32_t width, uint32_t height) = 0;
-        virtual TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) = 0;
 
-        virtual void BeginRenderSurface(const RenderSurfaceHandle& handle) = 0;
-        virtual void EndRenderSurface() = 0;
+        [[nodiscard]] virtual TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) const = 0;
+        [[nodiscard]] virtual RenderSurfaceHandle GetPresentableSurface() const = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t firstVertex) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) = 0;
+
+        virtual void Execute(const CommandBuffer& commandBuffer) = 0;
     };
 }

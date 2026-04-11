@@ -7,6 +7,7 @@
 #include <Aether/Math/Vector.h>
 #include <Aether/Renderer/Texture.h>
 #include <Aether/Renderer/Sampler.h>
+#include <Aether/Renderer/Buffer.h>
 #include <Aether/Renderer/Pipeline.h>
 
 namespace Aether::Renderer {

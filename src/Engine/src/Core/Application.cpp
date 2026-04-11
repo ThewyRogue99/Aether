@@ -6,7 +6,6 @@
 
 #include <Aether/Platform/Window.h>
 #include <Aether/Platform/Platform.h>
-
 #include <Aether/Events/Event.h>
 #include <Aether/Events/EventQueue.h>
 #include <Aether/Events/WindowEvent.h>
@@ -126,11 +125,6 @@ namespace Aether::Engine {
             return true;
         });
 
-        dispatcher.Dispatch<FramebufferResizeEvent>([this](FramebufferResizeEvent& event) {
-            Renderer::Renderer::SetViewport(event.GetWidth(), event.GetHeight());
-            return false;
-        });
-
         for (auto it = m_Impl->m_LayerStack.rbegin(); it != m_Impl->m_LayerStack.rend(); ++it) {
             (*it)->OnEvent(e);
             if (e.Handled) break;
@@ -139,7 +133,7 @@ namespace Aether::Engine {
 
     void Application::Init() {
         m_Impl->Init();
-        Renderer::Renderer::Init({ m_Impl->m_Window.get() });
+        Renderer::Renderer::Init({ m_Impl->m_Window->GetGraphicsContext() });
         OnInit();
     }
 
