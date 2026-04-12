@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include <Aether/Renderer/Buffer.h>
 #include <Aether/Renderer/Shader.h>
 #include <Aether/Renderer/Pipeline.h>
@@ -80,6 +82,8 @@ namespace Aether::Renderer {
         static void BindIndexBuffer(const BufferHandle& handle);
 
         static void DrawMesh(const Mesh& mesh, const Material& material, const Math::Matrix4f& model);
+
+        static void SubmitAndFlush(std::function<void()> fn);
         static uint32_t GetNativeTextureID(const TextureHandle& handle);
     };
 }

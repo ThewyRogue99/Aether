@@ -14,6 +14,7 @@
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
+#include <utility>
 
 #include "Math/Interop.h"
 #include "OpenGL/GLBackend.h"
@@ -113,6 +114,12 @@ namespace Aether::Renderer {
 
     void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const Math::Matrix4f& model) {
         s_CommandBuffer.DrawMesh(mesh, material, model);
+    }
+
+    void Renderer::SubmitAndFlush(std::function<void()> fn) {
+        s_RenderThread.Enqueue(std::move(fn));
+
+        s_RenderThread.Flush();
     }
 
     uint32_t Renderer::GetNativeTextureID(const TextureHandle& handle) {
