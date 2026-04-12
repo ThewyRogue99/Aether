@@ -14,7 +14,7 @@ namespace Aether::ECS {
             m_Alive[index] = true;
         } else {
             index = static_cast<uint32_t>(m_Generations.size());
-            m_Generations.push_back(0);
+            m_Generations.push_back(1);
             m_Alive.push_back(true);
         }
 
