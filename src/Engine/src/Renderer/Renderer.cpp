@@ -115,6 +115,10 @@ namespace Aether::Renderer {
         s_CommandBuffer.DrawMesh(mesh, material, model);
     }
 
+    uint32_t Renderer::GetNativeTextureID(const TextureHandle& handle) {
+        return s_Backend->GetNativeTextureID(handle);
+    }
+
     RenderAPI Renderer::GetAPI() {
         return s_Backend ? s_Backend->API() : RenderAPI::None;
     }

@@ -80,5 +80,6 @@ namespace Aether::Renderer {
         static void BindIndexBuffer(const BufferHandle& handle);
 
         static void DrawMesh(const Mesh& mesh, const Material& material, const Math::Matrix4f& model);
+        static uint32_t GetNativeTextureID(const TextureHandle& handle);
     };
 }

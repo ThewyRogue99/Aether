@@ -53,6 +53,7 @@ namespace Aether::Renderer {
 
         TextureHandle CreateTexture2D(const TextureDesc& desc) override;
         void DestroyTexture(const TextureHandle& texture) override;
+        [[nodiscard]] uint32_t GetNativeTextureID(const TextureHandle& handle) const override;
 
         SamplerHandle CreateSampler(const SamplerDesc& desc) override;
         void DestroySampler(const SamplerHandle& sampler) override;

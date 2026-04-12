@@ -416,6 +416,15 @@ namespace Aether::Renderer {
             m_Textures2D.erase(it);
         }
 
+        [[nodiscard]] virtual uint32_t GetNativeTextureID(const TextureHandle& handle) const {
+            if (
+                const auto it = m_Textures2D.find(handle.id);
+                it != m_Textures2D.end()
+            ) return it->second.id;
+
+            return 0;
+        }
+
         SamplerHandle CreateSampler(const SamplerDesc& desc) {
             GLuint s = 0;
             glGenSamplers(1, &s);
@@ -932,6 +941,10 @@ namespace Aether::Renderer {
 
     void GLBackend::DestroyTexture(const TextureHandle& texture) {
         m_Impl->DestroyTexture(texture);
+    }
+
+    uint32_t GLBackend::GetNativeTextureID(const TextureHandle& handle) const {
+        return m_Impl->GetNativeTextureID(handle);
     }
 
     SamplerHandle GLBackend::CreateSampler(const SamplerDesc& desc) {
