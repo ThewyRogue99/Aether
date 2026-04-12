@@ -29,5 +29,9 @@ namespace Aether {
         Scene::Entity m_CameraEntity;
 
         float m_DeltaTime = 0.0f;
+        float m_MoveSpeed = 5.0f;
+        float m_MouseSensitivity = 0.1f;
+        float m_LastMouseX = 0.0f;
+        float m_LastMouseY = 0.0f;
     };
 }

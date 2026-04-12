@@ -10,9 +10,9 @@
 #include <Aether/Components/Rendering/MeshRenderer.h>
 #include <Aether/Core/Application.h>
 #include <Aether/Events/EventDispatcher.h>
-#include <Aether/Events/KeyEvent.h>
 #include <Aether/Input/Input.h>
 #include <Aether/Input/KeyCode.h>
+#include <Aether/Input/MouseButton.h>
 #include <Aether/Log/Log.h>
 #include <Aether/Math/Math.h>
 #include <Aether/Math/Vector.h>
@@ -229,24 +229,6 @@ namespace Aether {
     void SandboxLayer::OnEvent(Engine::Event& e) {
         Engine::EventDispatcher dispatcher(e);
 
-        dispatcher.Dispatch<Engine::KeyPressedEvent>([this](Engine::KeyPressedEvent& ke) {
-            if (!m_CameraEntity) return false;
-
-            auto& transform = m_CameraEntity.GetComponent<Components::Transform>();
-
-            if (ke.GetKeyCode() == Engine::KeyCode::W) transform.Position.z += 1.f * m_DeltaTime;
-            if (ke.GetKeyCode() == Engine::KeyCode::A) transform.Position.x -= 1.f * m_DeltaTime;
-            if (ke.GetKeyCode() == Engine::KeyCode::S) transform.Position.z -= 1.f * m_DeltaTime;
-            if (ke.GetKeyCode() == Engine::KeyCode::D) transform.Position.x += 1.f * m_DeltaTime;
-
-            AETHER_INFO("Camera: %.2f, %.2f, %.2f",
-                transform.Position.x,
-                transform.Position.y,
-                transform.Position.z);
-
-            return false;
-        });
-
         dispatcher.Dispatch<Engine::FramebufferResizeEvent>([this](Engine::FramebufferResizeEvent& fr) {
             Renderer::Renderer::ResizeRenderSurface(m_RenderSurfaceHandle, fr.GetWidth(), fr.GetHeight());
             return false;
@@ -262,6 +244,57 @@ namespace Aether {
             auto& t = m_TexEntity.GetComponent<Components::Transform>();
             t.Rotation.z += k_RotationSpeed * deltaTime;
         }
+
+        // ── Camera control ────────────────────────────────────────────
+        if (!m_CameraEntity) return;
+
+        auto& transform = m_CameraEntity.GetComponent<Components::Transform>();
+        auto& rotation = transform.Rotation;
+
+        // Mouse look (right-click hold)
+        const float mouseX = Engine::Input::GetMouseX();
+        const float mouseY = Engine::Input::GetMouseY();
+
+        if (Engine::Input::IsMouseButtonPressed(Engine::MouseButton::Right)) {
+            const float dx = mouseX - m_LastMouseX;
+            const float dy = mouseY - m_LastMouseY;
+
+            rotation.y -= dx * m_MouseSensitivity;
+            rotation.x -= dy * m_MouseSensitivity;
+
+            // Clamp pitch
+            if (rotation.x > 89.0f) rotation.x = 89.0f;
+            if (rotation.x < -89.0f) rotation.x = -89.0f;
+        }
+
+        m_LastMouseX = mouseX;
+        m_LastMouseY = mouseY;
+
+        // Compute forward/right from current rotation
+        const float pitch = Math::Radians(rotation.x);
+        const float yaw = Math::Radians(rotation.y);
+
+        Math::Vector3f forward = {
+            std::cos(pitch) * std::sin(yaw),
+            std::sin(pitch),
+            std::cos(pitch) * std::cos(yaw)
+        };
+        forward = Math::Normalize(forward);
+
+        const Math::Vector3f worldUp = { 0.0f, 1.0f, 0.0f };
+        Math::Vector3f right = Math::Normalize(Math::Cross(forward, worldUp));
+
+        // Keyboard movement
+        float speed = m_MoveSpeed;
+        if (Engine::Input::IsKeyPressed(Engine::KeyCode::LeftShift))
+            speed *= 2.5f;
+
+        if (Engine::Input::IsKeyPressed(Engine::KeyCode::W)) transform.Position += forward * speed * deltaTime;
+        if (Engine::Input::IsKeyPressed(Engine::KeyCode::S)) transform.Position -= forward * speed * deltaTime;
+        if (Engine::Input::IsKeyPressed(Engine::KeyCode::D)) transform.Position += right * speed * deltaTime;
+        if (Engine::Input::IsKeyPressed(Engine::KeyCode::A)) transform.Position -= right * speed * deltaTime;
+        if (Engine::Input::IsKeyPressed(Engine::KeyCode::Space)) transform.Position.y += speed * deltaTime;
+        if (Engine::Input::IsKeyPressed(Engine::KeyCode::LeftControl)) transform.Position.y -= speed * deltaTime;
     }
 
 }
