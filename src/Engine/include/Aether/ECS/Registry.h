@@ -51,6 +51,14 @@ namespace Aether::ECS {
             return GetStorage<T>().Has(entity);
         }
 
+        template<typename T>
+        bool HasComponent(const Entity& entity) const {
+            if (!IsAlive(entity)) return false;
+
+            const auto* storage = FindStorage<T>();
+            return storage && storage->Has(entity);
+        }
+
     public:
         template<typename... Ts>
         class RegistryView {
@@ -217,6 +225,16 @@ namespace Aether::ECS {
         }
 
     private:
+        template<typename T>
+        const ComponentStorage<T>* FindStorage() const {
+            const std::type_index type = typeid(T);
+
+            auto it = m_Storages.find(type);
+            if (it == m_Storages.end()) return nullptr;
+
+            return static_cast<const ComponentStorage<T>*>(it->second.get());
+        }
+
         template<typename T>
         ComponentStorage<T>& GetStorage() {
             const std::type_index type = typeid(T);
