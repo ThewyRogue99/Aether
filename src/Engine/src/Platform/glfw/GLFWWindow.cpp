@@ -174,6 +174,10 @@ namespace Aether::Platform {
         }
     }
 
+    void* GLFWWindow::GetNativeHandle() const {
+        return GetWindowHandle();
+    }
+
     GLFWwindow* GLFWWindow::GetWindowHandle() const {
         return m_Context->GetWindowHandle();
     }

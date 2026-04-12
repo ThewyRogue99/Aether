@@ -33,6 +33,7 @@ namespace Aether::Platform {
         [[nodiscard]] bool ShouldClose() const override;
 
         [[nodiscard]] GraphicsContext* GetGraphicsContext() const override;
+        [[nodiscard]] void* GetNativeHandle() const override;
 
     private:
         void InitCallbacks();

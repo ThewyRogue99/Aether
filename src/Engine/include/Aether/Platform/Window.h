@@ -44,6 +44,7 @@ namespace Aether::Platform {
         [[nodiscard]] virtual bool ShouldClose() const = 0;
 
         [[nodiscard]] virtual GraphicsContext* GetGraphicsContext() const = 0;
+        [[nodiscard]] virtual void* GetNativeHandle() const = 0;
 
         static std::unique_ptr<Window> Create(const WindowProps& props = WindowProps());
     };
