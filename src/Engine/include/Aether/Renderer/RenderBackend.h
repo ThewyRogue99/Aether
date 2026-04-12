@@ -80,6 +80,7 @@ namespace Aether::Renderer {
 
         [[nodiscard]] virtual TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) const = 0;
         [[nodiscard]] virtual RenderSurfaceHandle GetPresentableSurface() const = 0;
+        virtual RenderSurfaceSize GetRenderSurfaceSize(const RenderSurfaceHandle& handle) = 0;
 
         virtual void Draw(uint32_t vertexCount, uint32_t firstVertex) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t firstIndex) = 0;

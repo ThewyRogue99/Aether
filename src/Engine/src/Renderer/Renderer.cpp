@@ -305,6 +305,17 @@ namespace Aether::Renderer {
         return out;
     }
 
+    RenderSurfaceSize Renderer::GetRenderSurfaceSize(const RenderSurfaceHandle& handle) {
+        RenderSurfaceSize out;
+
+        s_RenderThread.Enqueue([&]() {
+            out = s_Backend->GetRenderSurfaceSize(handle);
+        });
+
+        s_RenderThread.Flush();
+        return out;
+    }
+
     RenderSurfaceHandle Renderer::GetPresentableSurface() {
         RenderSurfaceHandle out;
 

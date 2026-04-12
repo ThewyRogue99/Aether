@@ -73,6 +73,7 @@ namespace Aether::Renderer {
         static TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle);
 
         static RenderSurfaceHandle GetPresentableSurface();
+        static RenderSurfaceSize GetRenderSurfaceSize(const RenderSurfaceHandle& handle);
 
         static void BindPipeline(const PipelineHandle& handle);
         static void BindVertexBuffer(const BufferHandle& handle);

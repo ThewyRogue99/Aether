@@ -200,6 +200,12 @@ namespace Aether::Renderer {
             return { m_PresentableSurfaceId };
         }
 
+        RenderSurfaceSize GetRenderSurfaceSize(const RenderSurfaceHandle& handle) {
+            const auto it = m_RenderSurfaces.find(handle.id);
+            AETHER_ASSERT(it != m_RenderSurfaces.end());
+            return { it->second.width, it->second.height };
+        }
+
         void SetClearColor(float r, float g, float b, float a) {
             m_ClearColor[0] = r;
             m_ClearColor[1] = g;
@@ -962,6 +968,10 @@ namespace Aether::Renderer {
 
     RenderSurfaceHandle GLBackend::GetPresentableSurface() const {
         return m_Impl->GetPresentableSurface();
+    }
+
+    RenderSurfaceSize GLBackend::GetRenderSurfaceSize(const RenderSurfaceHandle& handle) {
+        return m_Impl->GetRenderSurfaceSize(handle);
     }
 
     void GLBackend::BindPipeline(const PipelineHandle& handle) {

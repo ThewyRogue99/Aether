@@ -14,6 +14,11 @@ namespace Aether::Renderer {
         explicit operator bool() const { return id != 0; }
     };
 
+    struct RenderSurfaceSize {
+        uint32_t width = 0;
+        uint32_t height = 0;
+    };
+
     struct RenderSurfaceDesc {
         uint32_t width = 0;
         uint32_t height = 0;

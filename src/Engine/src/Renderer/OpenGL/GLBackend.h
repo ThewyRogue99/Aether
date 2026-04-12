@@ -66,6 +66,7 @@ namespace Aether::Renderer {
 
         [[nodiscard]] TextureHandle GetRenderSurfaceColorAttachment(const RenderSurfaceHandle& handle) const override;
         [[nodiscard]] RenderSurfaceHandle GetPresentableSurface() const override;
+        RenderSurfaceSize GetRenderSurfaceSize(const RenderSurfaceHandle& handle) override;
 
         void BindPipeline(const PipelineHandle& handle) override;
         void BindVertexBuffer(const BufferHandle& handle) override;

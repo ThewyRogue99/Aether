@@ -46,7 +46,11 @@ namespace Aether::Systems {
 
                 const auto view = Math::LookAt(position, position + forward, up);
 
-                constexpr float aspect = 16.0f / 9.0f;
+                const auto surfaceSize = Renderer::Renderer::GetRenderSurfaceSize(m_RenderSurface);
+                const float aspect = surfaceSize.height > 0
+                    ? static_cast<float>(surfaceSize.width) / static_cast<float>(surfaceSize.height)
+                    : 1.0f;
+
                 const auto projection = Math::Perspective(
                     Math::Radians(camera.FOV),
                     aspect,
