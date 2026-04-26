@@ -14,14 +14,11 @@ namespace Aether {
     class SceneHierarchyPanel : public EditorPanel {
     public:
         SceneHierarchyPanel();
-        ~SceneHierarchyPanel();
+        ~SceneHierarchyPanel() override;
 
         void OnAttach(EditorContext &context) override;
         void OnDetach(EditorContext &context) override;
 
         void Draw(EditorContext& context) override;
-
-    private:
-        Scene::Scene* m_ActiveScene = nullptr;
     };
 } // Aether

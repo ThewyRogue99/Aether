@@ -22,22 +22,18 @@ namespace Aether {
 
     void SceneHierarchyPanel::OnAttach(EditorContext& context) {
         EditorPanel::OnAttach(context);
-
-        m_ActiveScene = Engine::Application::Get().GetSceneManager().GetActiveScene();
     }
 
     void SceneHierarchyPanel::OnDetach(EditorContext &context) {
         EditorPanel::OnDetach(context);
-
-        m_ActiveScene = nullptr;
     }
 
     void SceneHierarchyPanel::Draw(EditorContext& context) {
         ImGui::Begin("Scene Hierarchy", &m_Open);
 
-        if (m_ActiveScene) {
-            for (auto [entity, transform] : m_ActiveScene->View<Components::Transform>().each()) {
-                Scene::Entity sceneEntity(entity, m_ActiveScene);
+        if (const auto activeScene = context.ActiveScene) {
+            for (auto [entity, transform] : activeScene->View<Components::Transform>().each()) {
+                Scene::Entity sceneEntity(entity, activeScene);
 
                 const char* label = "Entity";
                 if (sceneEntity.HasComponent<Components::Name>()) {

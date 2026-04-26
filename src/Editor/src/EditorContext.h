@@ -13,6 +13,7 @@ namespace Aether::Scene {
 
 namespace Aether {
     struct EditorContext {
+        Scene::Scene* ActiveScene = nullptr;
         Scene::Entity SelectedEntity;
         Renderer::RenderSurfaceHandle ViewportSurface;
     };

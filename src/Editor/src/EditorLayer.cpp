@@ -218,6 +218,8 @@ namespace Aether {
 
         if (auto* scene = sm.GetActiveScene()) {
             scene->AddSystem<Systems::RenderingSystem>(1, m_Context.ViewportSurface);
+            m_Context.ActiveScene = scene;
+            m_Context.SelectedEntity = {};
         }
     }
 
