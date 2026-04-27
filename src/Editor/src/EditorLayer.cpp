@@ -193,8 +193,17 @@ namespace Aether {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
         ImGui::StyleColorsDark();
+
+        // When viewports are enabled, ImGui creates OS-native windows for floating
+        // panels. Tweak style so child windows look the same as docked ones.
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGuiStyle& style = ImGui::GetStyle();
+            style.WindowRounding              = 0.f;
+            style.Colors[ImGuiCol_WindowBg].w = 1.f;
+        }
 
         auto* window = static_cast<GLFWwindow*>(
             Engine::Application::Get().GetWindow().GetNativeHandle()
@@ -258,14 +267,35 @@ namespace Aether {
 
         EndDockspace();
 
+        UpdateEditorCamera(deltaTime);
+
         ImGui::Render();
 
+        const bool viewportsEnabled =
+            (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0;
+
+        // Native window creation/destruction MUST happen on the main thread
+        // (macOS NSWindow restriction). The actual GL rendering for those
+        // viewports is done on the render thread below.
+        if (viewportsEnabled) {
+            ImGui::UpdatePlatformWindows();
+        }
+
         // Render ImGui to the default framebuffer (FBO 0) on the render thread,
-        // then swap buffers
+        // render any extra viewport windows there too, then swap buffers.
         auto* context = Engine::Application::Get().GetWindow().GetGraphicsContext();
-        Renderer::Renderer::SubmitAndFlush([context]() {
+        Renderer::Renderer::SubmitAndFlush([context, viewportsEnabled]() {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            if (viewportsEnabled) {
+                // RenderPlatformWindowsDefault makes each viewport's GL context
+                // current per window, so save/restore around it.
+                GLFWwindow* backup = glfwGetCurrentContext();
+                ImGui::RenderPlatformWindowsDefault();
+                glfwMakeContextCurrent(backup);
+            }
+
             context->SwapBuffers();
         });
     }
