@@ -8,11 +8,15 @@
 
 #include <Aether/Core/Layer.h>
 #include <Aether/Core/Memory/Pointer.h>
+#include <Aether/Scene/Entity.h>
 
 #include "EditorContext.h"
 #include "Panels/EditorPanel.h"
 
 namespace Aether {
+    class ViewportPanel;
+    class EditorRenderingSystem;
+
     class EditorLayer : public Engine::Layer {
     public:
         EditorLayer();
@@ -29,6 +33,8 @@ namespace Aether {
         void BeginDockspace();
         void EndDockspace();
 
+        void UpdateEditorCamera(float deltaTime);
+
         template<typename T, typename... Args>
         T& AddPanel(Args&&... args) {
             auto panel = Engine::MakeScope<T>(std::forward<Args>(args)...);
@@ -40,5 +46,12 @@ namespace Aether {
 
         EditorContext m_Context;
         std::vector<Engine::Scope<EditorPanel>> m_Panels;
+
+        Scene::Entity m_EditorCameraEntity;
+        float m_LastMouseX = 0.f;
+        float m_LastMouseY = 0.f;
+
+        ViewportPanel* m_ViewportPanel = nullptr;
+        EditorRenderingSystem* m_RenderingSystem = nullptr;
     };
 } // Aether

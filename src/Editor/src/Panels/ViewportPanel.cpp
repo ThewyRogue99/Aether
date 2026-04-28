@@ -39,6 +39,8 @@ namespace Aether {
             );
         }
 
+        m_IsHovered = ImGui::IsWindowHovered();
+
         ImGui::End();
         ImGui::PopStyleVar();
     }

@@ -4,7 +4,10 @@
 
 #pragma once
 
+#include <optional>
+
 #include <Aether/Systems/ISystem.h>
+#include <Aether/Renderer/Renderer.h>
 #include <Aether/Renderer/RenderSurface.h>
 
 namespace Aether::Systems {
@@ -15,7 +18,13 @@ namespace Aether::Systems {
 
         void OnUpdate(Scene::Scene& scene, float DeltaTime) override;
 
-    private:
+    protected:
+        // Resolve the camera to render with this frame.
+        // Default: searches the scene for the first Primary Camera component.
+        // Subclasses may override to provide an editor camera, replay camera, etc.
+        virtual std::optional<Renderer::CameraDesc> ResolveCamera(
+            Scene::Scene& scene, float aspect);
+
         Renderer::RenderSurfaceHandle m_RenderSurface;
     };
 }

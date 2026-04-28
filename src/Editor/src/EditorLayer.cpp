@@ -24,6 +24,13 @@
 #include <Aether/Components/Rendering/Camera.h>
 #include <Aether/Components/Rendering/MeshRenderer.h>
 
+#include <Aether/Input/Input.h>
+#include <Aether/Input/KeyCode.h>
+#include <Aether/Input/MouseButton.h>
+#include <Aether/Math/Math.h>
+
+#include "EditorRenderingSystem.h"
+#include "Components/EditorCamera.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/PropertiesPanel.h"
@@ -119,19 +126,6 @@ namespace Aether {
                 .debugName = "TrianglePipeline"
             });
 
-            // Camera
-            {
-                auto e = CreateEntity("Camera");
-                auto& t = e.AddComponent<Components::Transform>();
-                t.Position = Math::Vector3f{ 0.f, 0.f, -4.f };
-
-                auto& cam = e.AddComponent<Components::Camera>();
-                cam.FOV = 60.f;
-                cam.Near = 0.1f;
-                cam.Far = 100.f;
-                cam.Primary = true;
-            }
-
             // Green triangle
             {
                 auto e = CreateEntity("Green Triangle");
@@ -216,7 +210,7 @@ namespace Aether {
         });
 
         // Panels
-        AddPanel<ViewportPanel>();
+        m_ViewportPanel = &AddPanel<ViewportPanel>();
         AddPanel<SceneHierarchyPanel>();
         AddPanel<PropertiesPanel>();
 
@@ -226,7 +220,14 @@ namespace Aether {
         sm.LoadScene("EditorScene");
 
         if (auto* scene = sm.GetActiveScene()) {
-            scene->AddSystem<Systems::RenderingSystem>(1, m_Context.ViewportSurface);
+            m_RenderingSystem = &scene->AddSystem<EditorRenderingSystem>(
+                1, m_Context.ViewportSurface);
+
+            m_EditorCameraEntity = scene->CreateEntity("Editor Camera");
+            auto& transform = m_EditorCameraEntity.AddComponent<Components::Transform>();
+            transform.Position = { 0.f, 0.f, -5.f };
+            m_EditorCameraEntity.AddComponent<Components::EditorCamera>();
+
             m_Context.ActiveScene = scene;
             m_Context.SelectedEntity = {};
         }
@@ -302,6 +303,62 @@ namespace Aether {
 
     void EditorLayer::OnEvent(Engine::Event& event) {
         Layer::OnEvent(event);
+    }
+
+    void EditorLayer::UpdateEditorCamera(float deltaTime) {
+        const float mouseX = Engine::Input::GetMouseX();
+        const float mouseY = Engine::Input::GetMouseY();
+
+        const bool active = m_EditorCameraEntity
+            && m_ViewportPanel
+            && m_ViewportPanel->IsHovered()
+            && Engine::Input::IsMouseButtonPressed(Engine::MouseButton::Right);
+
+        if (active) {
+            auto& transform = m_EditorCameraEntity.GetComponent<Components::Transform>();
+            auto& editorCamera = m_EditorCameraEntity.GetComponent<Components::EditorCamera>();
+
+            const float dx = mouseX - m_LastMouseX;
+            const float dy = mouseY - m_LastMouseY;
+
+            transform.Rotation.y -= dx * editorCamera.MouseSensitivity;
+            transform.Rotation.x -= dy * editorCamera.MouseSensitivity;
+
+            if (transform.Rotation.x > 89.f) transform.Rotation.x =  89.f;
+            if (transform.Rotation.x < -89.f) transform.Rotation.x = -89.f;
+
+            const float pitch = Math::Radians(transform.Rotation.x);
+            const float yaw = Math::Radians(transform.Rotation.y);
+
+            Math::Vector3f forward = Math::Normalize(Math::Vector3f{
+                std::cos(pitch) * std::sin(yaw),
+                std::sin(pitch),
+                std::cos(pitch) * std::cos(yaw)
+            });
+            const Math::Vector3f worldUp = { 0.f, 1.f, 0.f };
+            Math::Vector3f right = Math::Normalize(Math::Cross(forward, worldUp));
+
+            float speed = editorCamera.MoveSpeed;
+            if (Engine::Input::IsKeyPressed(Engine::KeyCode::LeftShift)) speed *= 2.5f;
+
+            const float step = speed * deltaTime;
+
+            if (Engine::Input::IsKeyPressed(Engine::KeyCode::W))
+                transform.Position += forward * step;
+            if (Engine::Input::IsKeyPressed(Engine::KeyCode::S))
+                transform.Position -= forward * step;
+            if (Engine::Input::IsKeyPressed(Engine::KeyCode::D))
+                transform.Position += right * step;
+            if (Engine::Input::IsKeyPressed(Engine::KeyCode::A))
+                transform.Position -= right * step;
+            if (Engine::Input::IsKeyPressed(Engine::KeyCode::Space))
+                transform.Position.y += step;
+            if (Engine::Input::IsKeyPressed(Engine::KeyCode::C))
+                transform.Position.y -= step;
+        }
+
+        m_LastMouseX = mouseX;
+        m_LastMouseY = mouseY;
     }
 
     void EditorLayer::BeginDockspace() {

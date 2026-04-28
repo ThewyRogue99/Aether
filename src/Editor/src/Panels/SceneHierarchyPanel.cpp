@@ -14,6 +14,7 @@
 #include <Aether/Scene/SceneManager.h>
 
 #include "EditorContext.h"
+#include "Components/EditorCamera.h"
 
 namespace Aether {
     SceneHierarchyPanel::SceneHierarchyPanel() = default;
@@ -34,6 +35,9 @@ namespace Aether {
         if (const auto activeScene = context.ActiveScene) {
             for (auto [entity, transform] : activeScene->View<Components::Transform>().each()) {
                 Scene::Entity sceneEntity(entity, activeScene);
+
+                // Editor-only entities (e.g. the editor camera) shouldn't appear here.
+                if (sceneEntity.HasComponent<Components::EditorCamera>()) continue;
 
                 const char* label = "Entity";
                 if (sceneEntity.HasComponent<Components::Name>()) {
