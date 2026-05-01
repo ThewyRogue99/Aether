@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string_view>
 #include <vector>
 
 #include <Aether/Core/Layer.h>
@@ -32,6 +33,9 @@ namespace Aether {
     private:
         void BeginDockspace();
         void EndDockspace();
+        void DrawMainMenuBar();
+
+        void ApplyTheme(std::string_view name);
 
         void UpdateEditorCamera(float deltaTime);
 

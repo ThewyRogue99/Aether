@@ -30,10 +30,12 @@
 #include <Aether/Math/Math.h>
 
 #include "EditorRenderingSystem.h"
+#include "EditorFonts.h"
 #include "Components/EditorCamera.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/PropertiesPanel.h"
+#include "Themes/ThemeRegistry.h"
 
 namespace Aether {
     // ── Temporary test scene ──────────────────────────────────────
@@ -189,15 +191,10 @@ namespace Aether {
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-        ImGui::StyleColorsDark();
+        Themes::RegisterBuiltins();
+        ApplyTheme("Aether Dark");
 
-        // When viewports are enabled, ImGui creates OS-native windows for floating
-        // panels. Tweak style so child windows look the same as docked ones.
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-            ImGuiStyle& style = ImGui::GetStyle();
-            style.WindowRounding              = 0.f;
-            style.Colors[ImGuiCol_WindowBg].w = 1.f;
-        }
+        EditorFonts::Load();
 
         auto* window = static_cast<GLFWwindow*>(
             Engine::Application::Get().GetWindow().GetNativeHandle()
@@ -363,6 +360,7 @@ namespace Aether {
 
     void EditorLayer::BeginDockspace() {
         ImGuiWindowFlags windowFlags =
+            ImGuiWindowFlags_MenuBar |
             ImGuiWindowFlags_NoDocking |
             ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoCollapse |
@@ -383,10 +381,47 @@ namespace Aether {
         ImGui::Begin("DockSpace", nullptr, windowFlags);
         ImGui::PopStyleVar(3);
 
+        DrawMainMenuBar();
+
         ImGui::DockSpace(ImGui::GetID("EditorDockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
     }
 
     void EditorLayer::EndDockspace() {
         ImGui::End();
+    }
+
+    void EditorLayer::DrawMainMenuBar() {
+        if (!ImGui::BeginMenuBar()) return;
+
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::BeginMenu("Theme")) {
+                const auto& reg     = Themes::ThemeRegistry::Get();
+                const auto& current = reg.Current();
+
+                for (const auto& entry : reg.All()) {
+                    const bool selected = (entry.Name == current);
+                    if (ImGui::MenuItem(entry.Name.c_str(), nullptr, selected)) {
+                        ApplyTheme(entry.Name);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMenuBar();
+    }
+
+    void EditorLayer::ApplyTheme(std::string_view name) {
+        if (!Themes::ThemeRegistry::Get().Apply(name)) return;
+
+        // When multi-viewport is enabled, OS-level windows can't have transparent
+        // or rounded corners — force opaque/square so they don't look broken.
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGuiStyle& style = ImGui::GetStyle();
+            style.WindowRounding              = 0.f;
+            style.Colors[ImGuiCol_WindowBg].w = 1.f;
+        }
     }
 } // Aether
