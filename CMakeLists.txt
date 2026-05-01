@@ -10,4 +10,6 @@ else()
 endif()
 
 add_subdirectory(external)
-add_subdirectory(src)
+add_subdirectory(Engine)
+add_subdirectory(Editor)
+add_subdirectory(Sandbox)
