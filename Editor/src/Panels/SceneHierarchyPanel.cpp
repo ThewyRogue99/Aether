@@ -10,8 +10,6 @@
 #include <Aether/Components/Core/Name.h>
 #include <Aether/Components/Core/Transform.h>
 #include <Aether/ECS/Entity.h>
-#include <Aether/Core/Application.h>
-#include <Aether/Scene/SceneManager.h>
 
 #include "EditorContext.h"
 #include "Components/EditorCamera.h"
@@ -25,14 +23,19 @@ namespace Aether {
         EditorPanel::OnAttach(context);
     }
 
-    void SceneHierarchyPanel::OnDetach(EditorContext &context) {
+    void SceneHierarchyPanel::OnDetach(EditorContext& context) {
         EditorPanel::OnDetach(context);
     }
 
     void SceneHierarchyPanel::Draw(EditorContext& context) {
         ImGui::Begin("Scene Hierarchy", &m_Open);
 
-        if (const auto activeScene = context.ActiveScene) {
+        auto* activeScene = context.ActiveScene;
+
+        Scene::Entity entityToDelete;
+        bool createEmptyRequested = false;
+
+        if (activeScene) {
             for (auto [entity, transform] : activeScene->View<Components::Transform>().each()) {
                 Scene::Entity sceneEntity(entity, activeScene);
 
@@ -52,13 +55,58 @@ namespace Aether {
                 if (ImGui::Selectable(buf, isSelected)) {
                     context.SelectedEntity = sceneEntity;
                 }
+
+                // Per-entity right-click menu.
+                if (ImGui::BeginPopupContextItem()) {
+                    context.SelectedEntity = sceneEntity; // selecting on right-click feels natural
+
+                    if (ImGui::MenuItem("Delete Entity")) {
+                        entityToDelete = sceneEntity;
+                    }
+                    ImGui::EndPopup();
+                }
             }
         }
 
-        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
-            context.SelectedEntity = {};
+        // Right-click on empty space inside the panel → "create" menu.
+        // NoOpenOverItems ensures this doesn't fire on top of an entity row
+        // (which has its own per-item popup above).
+        if (
+            activeScene &&
+            ImGui::BeginPopupContextWindow(
+                nullptr,
+                ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems
+            )
+        ) {
+            if (ImGui::MenuItem("Create Empty Entity")) {
+                createEmptyRequested = true;
+            }
+            ImGui::EndPopup();
+        }
+
+        // Click on empty space → deselect.
+        if (
+            ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+            ImGui::IsWindowHovered() &&
+            !ImGui::IsAnyItemHovered()
+        ) {
+            context.SelectedEntity = { };
         }
 
         ImGui::End();
+
+        // ── Deferred mutations ───────────────────────────────────────
+        if (activeScene && createEmptyRequested) {
+            auto entity = activeScene->CreateEntity("Entity");
+            entity.AddComponent<Components::Transform>();
+            context.SelectedEntity = entity;
+        }
+
+        if (activeScene && entityToDelete) {
+            if (context.SelectedEntity == entityToDelete) {
+                context.SelectedEntity = {};
+            }
+            activeScene->DestroyEntity(entityToDelete);
+        }
     }
 } // Aether
