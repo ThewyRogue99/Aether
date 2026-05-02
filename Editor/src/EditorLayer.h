@@ -11,6 +11,7 @@
 #include <Aether/Core/Memory/Pointer.h>
 #include <Aether/Scene/Entity.h>
 
+#include "EditorConfig.h"
 #include "EditorContext.h"
 #include "Panels/EditorPanel.h"
 
@@ -49,6 +50,7 @@ namespace Aether {
         }
 
         EditorContext m_Context;
+        EditorConfig::Settings m_Config;
         std::vector<Engine::Scope<EditorPanel>> m_Panels;
 
         Scene::Entity m_EditorCameraEntity;

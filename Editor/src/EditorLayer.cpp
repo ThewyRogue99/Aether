@@ -192,7 +192,10 @@ namespace Aether {
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
         Themes::RegisterBuiltins();
-        ApplyTheme("Aether Dark");
+
+        // Load persisted settings (theme, etc.). Falls back to defaults if missing.
+        m_Config = EditorConfig::Load();
+        ApplyTheme(m_Config.Theme);
 
         EditorFonts::Load();
 
@@ -413,7 +416,20 @@ namespace Aether {
     }
 
     void EditorLayer::ApplyTheme(std::string_view name) {
-        if (!Themes::ThemeRegistry::Get().Apply(name)) return;
+        auto& registry = Themes::ThemeRegistry::Get();
+
+        if (!registry.Apply(name)) {
+            // Saved theme isn't registered (renamed/removed) — fall back so we
+            // never leave the editor with no theme applied.
+            constexpr const char* kFallback = "Aether Dark";
+            if (name != kFallback) {
+                AETHER_WARN("Theme '%.*s' not found, falling back to '%s'",
+                            static_cast<int>(name.size()), name.data(), kFallback);
+                registry.Apply(kFallback);
+            } else {
+                return;
+            }
+        }
 
         // When multi-viewport is enabled, OS-level windows can't have transparent
         // or rounded corners — force opaque/square so they don't look broken.
@@ -423,5 +439,9 @@ namespace Aether {
             style.WindowRounding              = 0.f;
             style.Colors[ImGuiCol_WindowBg].w = 1.f;
         }
+
+        // Persist whatever theme actually got applied (post-fallback).
+        m_Config.Theme = registry.Current();
+        EditorConfig::Save(m_Config);
     }
 } // Aether

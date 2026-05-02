@@ -1,6 +1,7 @@
 add_executable(Editor
     EditorApp.cpp
     EditorLayer.cpp
+    EditorConfig.cpp
     EditorRenderingSystem.cpp
     EditorFonts.cpp
     Panels/ViewportPanel.cpp
