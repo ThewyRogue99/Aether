@@ -261,7 +261,10 @@ namespace Aether::Engine {
     }
 
     void String::growTo(uint32_t newCap) {
-        AETHER_ASSERT_MSG(m_alloc, "Allocator not set");
+        // Lazily fall back to the default allocator if none was set explicitly,
+        // so default-constructed Strings can be mutated freely without surprise.
+        if (!m_alloc) m_alloc = &DefaultAllocator();
+
         char* newData = static_cast<char*>(m_alloc->allocate(static_cast<std::size_t>(newCap) + 1));
         AETHER_ASSERT(newData);
 
