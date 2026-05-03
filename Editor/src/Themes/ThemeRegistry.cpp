@@ -18,7 +18,7 @@ namespace Aether::Themes {
         return instance;
     }
 
-    void ThemeRegistry::Register(std::string name, ApplyFn apply) {
+    void ThemeRegistry::Register(Engine::String name, ApplyFn apply) {
         for (auto& entry : m_Themes) {
             if (entry.Name == name) {
                 entry.Apply = std::move(apply);
@@ -28,10 +28,10 @@ namespace Aether::Themes {
         m_Themes.push_back({ std::move(name), std::move(apply) });
     }
 
-    bool ThemeRegistry::Apply(std::string_view name) {
-        for (const auto& entry : m_Themes) {
-            if (entry.Name == name) {
-                entry.Apply();
+    bool ThemeRegistry::Apply(Engine::StringView name) {
+        for (const auto&[Name, Apply] : m_Themes) {
+            if (Name == name) {
+                Apply();
                 m_Current.assign(name);
                 return true;
             }
@@ -42,19 +42,19 @@ namespace Aether::Themes {
     void RegisterBuiltins() {
         auto& reg = ThemeRegistry::Get();
 
-        reg.Register("Aether Dark",            &ApplyAetherDark);
+        reg.Register("Aether Dark", &ApplyAetherDark);
 
-        reg.Register("Midnight Forge",         &ApplyMidnightForgeDark);
+        reg.Register("Midnight Forge", &ApplyMidnightForgeDark);
         reg.Register("Midnight Forge (Light)", &ApplyMidnightForgeLight);
 
-        reg.Register("Catppuccin Latte",       &ApplyCatppuccinLatte);
-        reg.Register("Catppuccin Frappé",      &ApplyCatppuccinFrappe);
-        reg.Register("Catppuccin Macchiato",   &ApplyCatppuccinMacchiato);
-        reg.Register("Catppuccin Mocha",       &ApplyCatppuccinMocha);
+        reg.Register("Catppuccin Latte", &ApplyCatppuccinLatte);
+        reg.Register("Catppuccin Frappé", &ApplyCatppuccinFrappe);
+        reg.Register("Catppuccin Macchiato", &ApplyCatppuccinMacchiato);
+        reg.Register("Catppuccin Mocha", &ApplyCatppuccinMocha);
 
-        reg.Register("Crimson Vesuvius",       &ApplyCrimsonVesuvius);
-        reg.Register("Sapphire",               &ApplySapphire);
-        reg.Register("Gruvbox Hard",           &ApplyGruvboxHard);
-        reg.Register("Dark Blue",              &ApplyDarkBlue);
+        reg.Register("Crimson Vesuvius", &ApplyCrimsonVesuvius);
+        reg.Register("Sapphire", &ApplySapphire);
+        reg.Register("Gruvbox Hard", &ApplyGruvboxHard);
+        reg.Register("Dark Blue", &ApplyDarkBlue);
     }
 }

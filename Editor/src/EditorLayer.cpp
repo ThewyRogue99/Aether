@@ -415,7 +415,7 @@ namespace Aether {
         ImGui::EndMenuBar();
     }
 
-    void EditorLayer::ApplyTheme(std::string_view name) {
+    void EditorLayer::ApplyTheme(Engine::StringView name) {
         auto& registry = Themes::ThemeRegistry::Get();
 
         if (!registry.Apply(name)) {

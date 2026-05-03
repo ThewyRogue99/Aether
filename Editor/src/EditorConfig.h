@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <string>
+#include <Aether/Core/String.h>
 
 namespace Aether::EditorConfig {
     struct Settings {
-        std::string Theme = "Aether Dark";
+        Engine::String Theme = "Aether Dark";
     };
 
     // Load settings from the config file. Missing or unparseable file

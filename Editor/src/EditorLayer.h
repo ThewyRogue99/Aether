@@ -36,7 +36,7 @@ namespace Aether {
         void EndDockspace();
         void DrawMainMenuBar();
 
-        void ApplyTheme(std::string_view name);
+        void ApplyTheme(Engine::StringView name);
 
         void UpdateEditorCamera(float deltaTime);
 

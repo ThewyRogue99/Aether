@@ -16,7 +16,7 @@ namespace Aether {
 
         virtual void Draw(EditorContext& context) = 0;
 
-        bool IsOpen() const { return m_Open; }
+        [[nodiscard]] bool IsOpen() const { return m_Open; }
         void SetOpen(bool open) { m_Open = open; }
 
     protected:

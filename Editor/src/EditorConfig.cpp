@@ -8,15 +8,17 @@
 #include <string_view>
 
 #include <Aether/Log/Log.h>
+#include <Aether/Core/String.h>
 
 namespace Aether::EditorConfig {
     namespace {
         constexpr const char* kConfigPath = "editor.cfg";
 
-        std::string_view Trim(std::string_view s) {
+        Engine::StringView Trim(Engine::StringView s) {
             while (!s.empty() && (s.front() == ' ' || s.front() == '\t')) s.remove_prefix(1);
             while (!s.empty() && (s.back()  == ' ' || s.back()  == '\t' ||
-                                   s.back()  == '\r' || s.back()  == '\n')) s.remove_suffix(1);
+                s.back()  == '\r' || s.back()  == '\n')) s.remove_suffix(1);
+
             return s;
         }
     }
@@ -55,6 +57,6 @@ namespace Aether::EditorConfig {
         }
 
         file << "# Aether editor configuration. Edited by the editor on each change.\n";
-        file << "theme=" << s.Theme << "\n";
+        file << "theme=" << s.Theme.c_str() << "\n";
     }
 }
