@@ -15,6 +15,7 @@
 #include <Aether/Core/RuntimeObject.h>
 #include <Aether/Platform/Window.h>
 #include <Aether/Renderer/Renderer.h>
+#include <Aether/Renderer/PipelineLoader.h>
 #include <Aether/Scene/Scene.h>
 #include <Aether/Scene/SceneManager.h>
 #include <Aether/Systems/Rendering/RenderingSystem.h>
@@ -51,35 +52,6 @@ namespace Aether {
         {{ -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f }}
     };
 
-    static const char* s_VertexSrc = R"(#version 330 core
-        layout(location = 0) in vec3 a_Position;
-        layout(location = 1) in vec3 a_Normal;
-        layout(location = 2) in vec2 a_TexCoord;
-
-        layout(std140) uniform Camera { mat4 u_ViewProjection; };
-        layout(std140) uniform Object { mat4 u_Model; };
-
-        out vec2 v_TexCoord;
-
-        void main() {
-            v_TexCoord  = a_TexCoord;
-            gl_Position = u_ViewProjection * u_Model * vec4(a_Position, 1.0);
-        }
-    )";
-
-    static const char* s_FragmentSrc = R"(#version 330 core
-        layout(std140) uniform Material { vec4 u_BaseColor; };
-
-        in  vec2 v_TexCoord;
-        out vec4 FragColor;
-
-        uniform sampler2D u_Albedo;
-
-        void main() {
-            vec4 tex  = texture(u_Albedo, v_TexCoord);
-            FragColor = tex * u_BaseColor;
-        }
-    )";
 
     class EditorScene : public Engine::RuntimeObject<EditorScene, Scene::Scene> {
     public:
@@ -92,41 +64,9 @@ namespace Aether {
                 .size   = sizeof(s_Vertices)
             }, s_Vertices);
 
-            const auto shader = Renderer::Renderer::CreateShader({
-                .debugName      = "TriangleShader",
-                .vertexSource   = s_VertexSrc,
-                .fragmentSource = s_FragmentSrc
-            });
-
-            Renderer::VertexAttribute attributes[] = {
-                { .location = 0, .format = Renderer::VertexFormat::Float3,
-                  .offset = offsetof(Vertex, position), .normalized = false },
-                { .location = 1, .format = Renderer::VertexFormat::Float3,
-                  .offset = offsetof(Vertex, normal),   .normalized = false },
-                { .location = 2, .format = Renderer::VertexFormat::Float2,
-                  .offset = offsetof(Vertex, texCoord), .normalized = false }
-            };
-
-            Renderer::PipelineLayoutDesc layoutDesc;
-            layoutDesc.vertexLayout = {
-                .attributes     = attributes,
-                .attributeCount = 3,
-                .stride         = sizeof(Vertex)
-            };
-            layoutDesc.uniformBufferLayout = {
-                { "Camera",   0, Renderer::ShaderStage::Vertex,   Renderer::UniformScope::Global   },
-                { "Object",   1, Renderer::ShaderStage::Vertex,   Renderer::UniformScope::Object   },
-                { "Material", 2, Renderer::ShaderStage::Fragment, Renderer::UniformScope::Material }
-            };
-
-            const auto pipeline = Renderer::Renderer::CreatePipeline({
-                .shader    = shader,
-                .layout    = layoutDesc,
-                .cull      = Renderer::CullMode::None,
-                .depth     = Renderer::DepthTest::Disabled,
-                .blending  = false,
-                .debugName = "TrianglePipeline"
-            });
+            const auto pipeline = Renderer::PipelineLoader::Load(
+                "assets/shaders/triangle.pipeline"
+            );
 
             // Green triangle
             {

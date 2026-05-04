@@ -1,0 +1,21 @@
+{
+  "shaders": {
+    "opengl": "triangle.glsl"
+  },
+  "vertex_layout": {
+    "stride": 32,
+    "attributes": [
+      { "location": 0, "format": "Float3", "offset": 0,  "normalized": false },
+      { "location": 1, "format": "Float3", "offset": 12, "normalized": false },
+      { "location": 2, "format": "Float2", "offset": 24, "normalized": false }
+    ]
+  },
+  "uniform_buffers": [
+    { "name": "Camera",   "binding": 0, "stages": ["Vertex"],   "scope": "Global"   },
+    { "name": "Object",   "binding": 1, "stages": ["Vertex"],   "scope": "Object"   },
+    { "name": "Material", "binding": 2, "stages": ["Fragment"], "scope": "Material" }
+  ],
+  "cull": "None",
+  "depth": "Disabled",
+  "blending": false
+}

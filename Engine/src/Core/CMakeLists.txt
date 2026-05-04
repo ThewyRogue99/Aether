@@ -8,6 +8,7 @@ add_library(aether_engine_core STATIC
     Name.cpp
     Layer.cpp
     LayerStack.cpp
+    Json.cpp
 )
 
 target_include_directories(aether_engine_core PRIVATE ${ENGINE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
@@ -15,6 +16,7 @@ target_include_directories(aether_engine_core PRIVATE ${ENGINE_INCLUDE_DIR} ${CM
 target_link_libraries(aether_engine_core PRIVATE
     aether_engine_build
     Aether::Engine::Platform
+    nlohmann_json::nlohmann_json
 )
 
 add_subdirectory(Memory)
