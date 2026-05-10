@@ -7,6 +7,7 @@
 #include "Core.h"
 #include "StringView.h"
 #include <cstring>
+#include <functional>
 #include <string_view>
 
 namespace Aether::Engine {
@@ -129,4 +130,13 @@ namespace Aether::Engine {
         a.append(b);
         return a;
     }
-}
+} // namespace Aether::Engine
+
+// Allow Engine::String to be used as a key in std::unordered_map / std::unordered_set.
+// Delegates to std::hash<std::string_view> via the implicit conversion operator.
+template<>
+struct std::hash<Aether::Engine::String> {
+    std::size_t operator()(const Aether::Engine::String& s) const noexcept {
+        return std::hash<std::string_view>{}(s);
+    }
+};
