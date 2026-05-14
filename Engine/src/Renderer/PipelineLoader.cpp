@@ -1,8 +1,9 @@
 //
-// Created by Aether on 03.05.2026.
+// Created by ThewyRogue99 on 03.05.2026.
 //
 
 #include <Aether/Renderer/PipelineLoader.h>
+
 #include "ShaderSplitter.h"
 
 #include <fstream>
@@ -16,24 +17,31 @@
 #include <Aether/Renderer/VertexLayout.h>
 
 namespace Aether::Renderer {
-    static std::string DirOf(std::string_view path) {
-        const auto pos = path.find_last_of("/\\");
-        if (pos == std::string_view::npos) return {};
-        return std::string(path.substr(0, pos + 1));
+    static Engine::String DirOf(Engine::StringView path) {
+        const uint32_t a = path.rfind('/');
+        const uint32_t b = path.rfind('\\');
+
+        // Pick the rightmost separator that was actually found.
+        uint32_t pos = Engine::StringView::npos;
+        if (a != Engine::StringView::npos) pos = a;
+        if (b != Engine::StringView::npos && (pos == Engine::StringView::npos || b > pos)) pos = b;
+
+        if (pos == Engine::StringView::npos) return {};
+        return Engine::String(path.substr(0, pos + 1));
     }
 
-    static std::string ReadTextFile(const std::string& path) {
-        std::ifstream file(path);
+    static Engine::String ReadTextFile(const Engine::String& path) {
+        std::ifstream file(path.data());
         if (!file.is_open()) {
             AETHER_ERROR("PipelineLoader: cannot open '%s'", path.c_str());
             return {};
         }
         std::ostringstream ss;
         ss << file.rdbuf();
-        return ss.str();
+        return ss.str().c_str();
     }
 
-    static VertexFormat ParseVertexFormat(std::string_view s) {
+    static VertexFormat ParseVertexFormat(Engine::StringView s) {
         if (s == "Float") return VertexFormat::Float;
         if (s == "Float2") return VertexFormat::Float2;
         if (s == "Float3") return VertexFormat::Float3;
@@ -46,7 +54,7 @@ namespace Aether::Renderer {
         return VertexFormat::Float3;
     }
 
-    static CullMode ParseCullMode(std::string_view s) {
+    static CullMode ParseCullMode(Engine::StringView s) {
         if (s == "None") return CullMode::None;
         if (s == "Back") return CullMode::Back;
         if (s == "Front") return CullMode::Front;
@@ -59,7 +67,7 @@ namespace Aether::Renderer {
         return CullMode::Back;
     }
 
-    static DepthTest ParseDepthTest(std::string_view s) {
+    static DepthTest ParseDepthTest(Engine::StringView s) {
         if (s == "Disabled") return DepthTest::Disabled;
         if (s == "LessEqual") return DepthTest::LessEqual;
 
@@ -74,7 +82,7 @@ namespace Aether::Renderer {
     static ShaderStage ParseShaderStages(const Engine::JsonValue& arr) {
         uint8_t mask = 0;
         arr.ForEach([&](const Engine::JsonValue& v) {
-            const std::string s = v.AsString();
+            const Engine::String s = v.AsString();
             if (s == "Vertex") mask |= static_cast<uint8_t>(ShaderStage::Vertex);
             else if (s == "Fragment") mask |= static_cast<uint8_t>(ShaderStage::Fragment);
             else if (s == "Compute") mask |= static_cast<uint8_t>(ShaderStage::Compute);
@@ -83,7 +91,7 @@ namespace Aether::Renderer {
         return static_cast<ShaderStage>(mask);
     }
 
-    static UniformScope ParseUniformScope(std::string_view s) {
+    static UniformScope ParseUniformScope(Engine::StringView s) {
         if (s == "Global") return UniformScope::Global;
         if (s == "Scene") return UniformScope::Scene;
         if (s == "Object") return UniformScope::Object;
@@ -97,7 +105,7 @@ namespace Aether::Renderer {
         return UniformScope::Global;
     }
 
-    PipelineHandle PipelineLoader::Load(std::string_view pipelinePath, std::string_view basePath) {
+    PipelineHandle PipelineLoader::Load(Engine::StringView pipelinePath, Engine::StringView basePath) {
         const auto root = Engine::JsonValue::ParseFile(pipelinePath);
         if (root.IsNull()) {
             AETHER_ERROR(
@@ -108,7 +116,7 @@ namespace Aether::Renderer {
             return {};
         }
 
-        std::string apiKey;
+        Engine::String apiKey;
         switch (Renderer::GetAPI()) {
             case RenderAPI::OpenGL: apiKey = "opengl"; break;
             case RenderAPI::Vulkan: apiKey = "vulkan"; break;
@@ -127,11 +135,11 @@ namespace Aether::Renderer {
             return {};
         }
 
-        const std::string base = basePath.empty() ? DirOf(pipelinePath) : std::string(basePath);
-        const std::string shaderRel = shadersNode.At(apiKey).AsString();
-        const std::string shaderPath = base + shaderRel;
+        const Engine::String base = basePath.empty() ? DirOf(pipelinePath) : Engine::String(basePath);
+        const Engine::String shaderRel = shadersNode.At(apiKey).AsString();
+        const Engine::String shaderPath = base + shaderRel;
 
-        const std::string shaderSrc = ReadTextFile(shaderPath);
+        const Engine::String shaderSrc = ReadTextFile(shaderPath);
         if (shaderSrc.empty()) return {};
 
         const auto [vertSrc, fragSrc] = SplitShaderSource(shaderSrc);

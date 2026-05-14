@@ -11,6 +11,8 @@ add_library(aether_engine_core STATIC
     Json.cpp
 )
 
+add_subdirectory(Serialization)
+
 target_include_directories(aether_engine_core PRIVATE ${ENGINE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(aether_engine_core PRIVATE

@@ -54,7 +54,6 @@ desktop.ini
 .Trash-*
 
 # ── Debug / profiling ───────────────────────────────────
-core
 core.*
 *.gcda
 *.gcno

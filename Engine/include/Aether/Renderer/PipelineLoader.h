@@ -1,5 +1,5 @@
 //
-// Created by Aether on 03.05.2026.
+// Created by ThewyRogue99 on 03.05.2026.
 //
 
 #pragma once
@@ -12,6 +12,6 @@
 namespace Aether::Renderer {
     class AETHER_API PipelineLoader {
     public:
-        static PipelineHandle Load(std::string_view pipelinePath, std::string_view basePath = {});
+        static PipelineHandle Load(Engine::StringView pipelinePath, Engine::StringView basePath = {});
     };
 } // namespace Aether::Renderer

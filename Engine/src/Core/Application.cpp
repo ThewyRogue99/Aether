@@ -99,6 +99,14 @@ namespace Aether::Engine {
         m_Impl->m_LayerStack.PushOverlay(std::move(overlay));
     }
 
+    void Application::PopLayer(Layer* layer) {
+        m_Impl->m_LayerStack.PopLayer(layer);
+    }
+
+    void Application::PopOverlay(Layer* overlay) {
+        m_Impl->m_LayerStack.PopOverlay(overlay);
+    }
+
     Platform::Window& Application::GetWindow() const {
         return *m_Impl->m_Window;
     }

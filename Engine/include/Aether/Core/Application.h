@@ -37,6 +37,8 @@ namespace Aether::Engine {
 
         void PushLayer(Scope<Layer> layer);
         void PushOverlay(Scope<Layer> overlay);
+        void PopLayer(Layer* layer);
+        void PopOverlay(Layer* overlay);
 
         [[nodiscard]] Platform::Window& GetWindow() const;
         [[nodiscard]] Scene::SceneManager& GetSceneManager() const;
