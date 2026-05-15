@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <string_view>
+#include <Aether/Core/StringView.h>
 
 #include <Aether/Core/Core.h>
 #include <Aether/Renderer/Pipeline.h>

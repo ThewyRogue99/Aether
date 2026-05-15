@@ -1,7 +1,5 @@
 add_library(aether_engine_core STATIC
     Application.cpp
-    StringView.cpp
-    String.cpp
     StringBuilder.cpp
     RuntimeObject.cpp
     Hash.cpp
@@ -9,6 +7,7 @@ add_library(aether_engine_core STATIC
     Layer.cpp
     LayerStack.cpp
     Json.cpp
+    Unicode.cpp
 )
 
 add_subdirectory(Serialization)

@@ -8,6 +8,7 @@
 
 #include <Aether/Core/Core.h>
 #include <Aether/Core/String.h>
+#include <Aether/Core/StringView.h>
 #include <Aether/Math/Vector.h>
 
 namespace Aether::Serialization {

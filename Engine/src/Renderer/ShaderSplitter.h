@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <Aether/Core/String.h>
 #include <Aether/Core/StringView.h>
 
 namespace Aether::Renderer {

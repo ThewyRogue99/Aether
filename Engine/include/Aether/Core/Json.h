@@ -9,6 +9,7 @@
 
 #include <Aether/Core/Core.h>
 #include <Aether/Core/String.h>
+#include <Aether/Core/StringView.h>
 
 namespace Aether::Engine {
     class AETHER_API JsonValue {

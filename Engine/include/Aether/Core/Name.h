@@ -5,12 +5,11 @@
 #pragma once
 
 #include <Aether/Core/String.h>
+#include <Aether/Core/StringView.h>
 
 #include <Aether/Core/Memory/Pointer.h>
 
 namespace Aether::Engine {
-    class StringView;
-
     class AETHER_API Name {
     public:
         Name();

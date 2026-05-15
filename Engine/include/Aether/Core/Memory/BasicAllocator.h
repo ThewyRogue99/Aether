@@ -21,4 +21,8 @@ namespace Aether::Engine {
 
         void deallocate(void* ptr);
     };
+
+    // Returns the process-wide default allocator.  Used by BasicString<CharT>
+    // when no explicit allocator is passed to the constructor.
+    AETHER_API BasicAllocator& DefaultAllocator();
 }
