@@ -8,6 +8,7 @@ add_library(aether_engine_core STATIC
     LayerStack.cpp
     Json.cpp
     Unicode.cpp
+    Guid.cpp
 )
 
 add_subdirectory(Serialization)

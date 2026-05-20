@@ -1,10 +1,9 @@
 //
-// Created by Aether on 15.05.2026.
+// Created by ThewyRogue99 on 15.05.2026.
 //
 
 #include <Aether/Core/Unicode.h>
 
-// Full template bodies are required here.
 #include <Aether/Core/String.h>
 #include <Aether/Log/Log.h>
 
@@ -261,5 +260,4 @@ namespace Aether::Engine {
         return String(path);
     #endif
     }
-
 } // namespace Aether::Engine
