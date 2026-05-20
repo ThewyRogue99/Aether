@@ -110,4 +110,67 @@ namespace Aether::Engine {
 
         std::variant<T, E> m_Storage;
     };
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Expected<void, E> — partial specialization for operations that succeed with
+    // no value but can fail with an error.
+    //
+    // Usage:
+    //   Expected<void, String> ok  = {};                   // success
+    //   Expected<void, String> err = Unexpected("oops"s);  // failure
+    //   if (!result) { AETHER_ERROR("%s", result.error().c_str()); }
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    template<typename E>
+    class Expected<void, E> {
+    public:
+        // Success — no value to carry.
+        constexpr Expected() : m_Storage(std::in_place_index<kSuccess>) {}
+
+        // Failure — constructed from Unexpected<G> (G must be convertible to E).
+        template<typename G>
+        constexpr Expected(Unexpected<G> u)
+            : m_Storage(std::in_place_index<kError>, std::move(u).Error()) {}
+
+        Expected(const Expected&) = default;
+        Expected(Expected&&)      = default;
+        Expected& operator=(const Expected&) = default;
+        Expected& operator=(Expected&&)      = default;
+
+        // ── Observers ─────────────────────────────────────────────────────────────
+
+        [[nodiscard]] constexpr bool has_value() const noexcept {
+            return m_Storage.index() == kSuccess;
+        }
+        [[nodiscard]] constexpr explicit operator bool() const noexcept {
+            return has_value();
+        }
+
+        // value() for void simply asserts we're in the success state.
+        constexpr void value() const {
+            AETHER_ASSERT_MSG(has_value(), "Expected<void>::value() called on an error state");
+        }
+
+        // ── Error access ──────────────────────────────────────────────────────────
+
+        [[nodiscard]] constexpr E& error() & {
+            AETHER_ASSERT_MSG(!has_value(), "Expected<void>::error() called on a value state");
+            return std::get<kError>(m_Storage);
+        }
+        [[nodiscard]] constexpr const E& error() const& {
+            AETHER_ASSERT_MSG(!has_value(), "Expected<void>::error() called on a value state");
+            return std::get<kError>(m_Storage);
+        }
+        [[nodiscard]] constexpr E error() && {
+            AETHER_ASSERT_MSG(!has_value(), "Expected<void>::error() called on a value state");
+            return std::get<kError>(std::move(m_Storage));
+        }
+
+    private:
+        static constexpr std::size_t kSuccess = 0;
+        static constexpr std::size_t kError   = 1;
+
+        std::variant<std::monostate, E> m_Storage;
+    };
+
 } // namespace Aether::Engine
