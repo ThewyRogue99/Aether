@@ -25,6 +25,9 @@ namespace Aether::Engine {
     template<typename Derived, typename Parent = RuntimeObjectBase>
     class AETHER_API RuntimeObject : public Parent {
     public:
+        template<typename... Args>
+        explicit RuntimeObject(Args&&... args) : Parent(std::forward<Args>(args)...) { }
+
         static TypeId GetStaticTypeId() {
             static const TypeId id = GetNextTypeId();
             return id;
